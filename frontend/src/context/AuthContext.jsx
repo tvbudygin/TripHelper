@@ -1,49 +1,42 @@
 import { createContext, useContext, useState, useEffect } from 'react'
-import * as authApi from '../api/auth.js'
+import { fetchCurrentUser } from '../api/authApi.js'
+import { TOKEN_STORAGE_KEY } from '../api/ApiClient.js'
 
 const AuthContext = createContext(null)
 
+/** Хранит текущего пользователя; при загрузке страницы восстанавливает вход по токену */
 export function AuthProvider({ children }) {
   const [user, setUser] = useState(null)
-  const [token, setToken] = useState(localStorage.getItem('token'))
-  const [loading, setLoading] = useState(true)
+  const [isCheckingSession, setIsCheckingSession] = useState(true)
 
   useEffect(() => {
-    if (token && !user) {
-      authApi.getMe()
-        .then(setUser)
-        .catch(() => {
-          localStorage.removeItem('token')
-          setToken(null)
-        })
-        .finally(() => setLoading(false))
-    } else {
-      setLoading(false)
+    const savedToken = localStorage.getItem(TOKEN_STORAGE_KEY)
+    if (!savedToken) {
+      setIsCheckingSession(false)
+      return
     }
-  }, [token])
 
-  function loginWithUser(newToken, userData) {
-    localStorage.setItem('token', newToken)
-    setToken(newToken)
+    fetchCurrentUser()
+      .then(setUser)
+      .catch(() => localStorage.removeItem(TOKEN_STORAGE_KEY))
+      .finally(() => setIsCheckingSession(false))
+  }, [])
+
+  function saveSession(token, userData) {
+    localStorage.setItem(TOKEN_STORAGE_KEY, token)
     setUser(userData)
-    setLoading(false)
   }
 
-  function logout() {
-    localStorage.removeItem('token')
-    setToken(null)
+  function clearSession() {
+    localStorage.removeItem(TOKEN_STORAGE_KEY)
     setUser(null)
   }
 
-  return (
-    <AuthContext.Provider value={{ user, token, loading, loginWithUser, logout }}>
-      {children}
-    </AuthContext.Provider>
-  )
+  const value = { user, isCheckingSession, saveSession, clearSession }
+  return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>
 }
 
+/** Доступ к пользователю и функциям входа/выхода */
 export function useAuth() {
-  const context = useContext(AuthContext)
-  if (!context) throw new Error('useAuth must be inside AuthProvider')
-  return context
+  return useContext(AuthContext)
 }

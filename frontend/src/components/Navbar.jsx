@@ -1,53 +1,40 @@
-import { Link, useLocation, useNavigate } from 'react-router-dom'
+import { Link } from 'react-router-dom'
 import { useAuth } from '../context/AuthContext.jsx'
+import NotificationBell from './NotificationBell.jsx'
+import ThemeToggle from './ThemeToggle.jsx'
 import './Navbar.css'
 
+/** Верхнее меню */
 function Navbar() {
-  const { user, logout } = useAuth()
-  const location = useLocation()
-  const navigate = useNavigate()
-
-  const isActive = (path) => location.pathname === path
-
-  function handleLogout() {
-    logout()
-    navigate('/')
-  }
+  const { user } = useAuth()
 
   return (
-    <nav className="navbar">
-      <div className="navbar-inner">
+    <header className="navbar">
+      <div className="navbar-inner container">
         <Link to="/" className="navbar-logo">
-          <span className="logo-icon">✈</span>
-          <span className="logo-text">TripHelper</span>
+          Trip<span>Helper</span>
         </Link>
 
-        <div className="navbar-links">
+        <nav className="navbar-links">
           {user ? (
             <>
-              <Link to="/dashboard" className={`nav-link ${isActive('/dashboard') ? 'active' : ''}`}>
-                Мои поездки
-              </Link>
-              <Link to="/profile" className={`nav-link ${isActive('/profile') ? 'active' : ''}`}>
-                Профиль
-              </Link>
-              <button onClick={handleLogout} className="nav-link nav-logout">
-                Выйти
-              </button>
+              <Link to="/dashboard" className="nav-link">Мои поездки</Link>
+              <Link to="/profile" className="nav-link">Профиль</Link>
+              <NotificationBell />
+              <ThemeToggle />
             </>
           ) : (
             <>
-              <Link to="/login" className={`nav-link ${isActive('/login') ? 'active' : ''}`}>
-                Войти
-              </Link>
-              <Link to="/register" className="nav-link nav-register">
+              <Link to="/login" className="nav-link">Войти</Link>
+              <Link to="/register" className="btn btn-primary btn-sm">
                 Регистрация
               </Link>
+              <ThemeToggle />
             </>
           )}
-        </div>
+        </nav>
       </div>
-    </nav>
+    </header>
   )
 }
 

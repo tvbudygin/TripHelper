@@ -2,7 +2,7 @@ from pydantic import BaseModel
 
 
 class StatsOut(BaseModel):
-    """Числа для статистики в профиле."""
+    """Статистика профиля"""
 
     total_trips: int
     countries_visited: int

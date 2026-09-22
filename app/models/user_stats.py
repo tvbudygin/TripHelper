@@ -8,7 +8,7 @@ from app.database import Base
 
 
 class UserStats(Base):
-    """Таблица статистики — чтобы быстро показывать цифры в профиле без пересчёта."""
+    """Таблица статистики профиля"""
 
     __tablename__ = "user_stats"
 

@@ -2,27 +2,28 @@ from pydantic import BaseModel, EmailStr
 
 
 class UserRegister(BaseModel):
-    """Что юзер присылает при регистрации."""
+    """Данные для регистрации"""
 
     email: EmailStr
     password: str
     full_name: str
 
 
-class UserLogin(BaseModel):
-    """Что юзер присылает при входе."""
-
-    email: EmailStr
-    password: str
-
-
 class UserOut(BaseModel):
-    """Что отдаю фронтенду про юзера (пароль не отдаю)."""
+    """Данные пользователя для фронтенда"""
 
     id: str
     email: str
     full_name: str
     avatar_url: str | None = None
+    notifications_enabled: bool
+    is_verified: bool
 
     class Config:
         from_attributes = True
+
+
+class UserSettingsUpdate(BaseModel):
+    """Настройки профиля"""
+
+    notifications_enabled: bool

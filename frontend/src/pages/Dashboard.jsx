@@ -1,106 +1,75 @@
-import { useState, useEffect } from 'react'
-import { getTrips, createTrip, deleteTrip } from '../api/trips.js'
-import AddTripModal from '../components/AddTripModal.jsx'
+import { useEffect, useState } from 'react'
+import { fetchTrips } from '../api/tripsApi.js'
+import TripRow from '../components/TripRow.jsx'
+import TripForm from '../components/TripForm.jsx'
 import './Dashboard.css'
 
+/** Страница со списком поездок */
 function Dashboard() {
   const [trips, setTrips] = useState([])
-  const [loading, setLoading] = useState(true)
-  const [showModal, setShowModal] = useState(false)
-
-  function loadTrips() {
-    setLoading(true)
-    getTrips()
-      .then((data) => setTrips(data))
-      .catch((err) => console.error('Не загрузились поездки:', err))
-      .finally(() => setLoading(false))
-  }
+  const [isLoading, setIsLoading] = useState(true)
+  const [isCreating, setIsCreating] = useState(false)
 
   useEffect(() => {
     loadTrips()
   }, [])
 
-  function handleCreateTrip(tripData) {
-    createTrip(tripData).then((newTrip) => {
-      setTrips((prev) => [newTrip, ...prev])
-      setShowModal(false)
-    })
+  /** Загружает поездки */
+  function loadTrips() {
+    setIsLoading(true)
+    fetchTrips()
+      .then(setTrips)
+      .finally(() => setIsLoading(false))
   }
 
-  function handleDeleteTrip(id) {
-    if (!window.confirm('Точно удалить эту поездку?')) return
-    deleteTrip(id).then(() => {
-      setTrips((prev) => prev.filter((t) => t.id !== id))
-    })
+  /** Добавляет новую поездку в список */
+  function handleCreated(newTrip) {
+    setTrips((current) => [newTrip, ...current])
+    setIsCreating(false)
   }
 
-  function formatDate(dateStr) {
-    return new Date(dateStr).toLocaleDateString('ru-RU', {
-      day: 'numeric',
-      month: 'short',
-      year: 'numeric',
-    })
+  /** Обновляет поездку в списке */
+  function handleUpdated(updatedTrip) {
+    setTrips((current) => current.map((trip) => (trip.id === updatedTrip.id ? updatedTrip : trip)))
   }
 
-  const statusLabels = { planning: 'Планирование', upcoming: 'Скоро', completed: 'Завершено', cancelled: 'Отменено' }
-
-  if (loading) {
-    return <div className="page-wrapper"><div className="loading-screen">Загрузка...</div></div>
+  /** Убирает удалённую поездку из списка */
+  function handleDeleted(tripId) {
+    setTrips((current) => current.filter((trip) => trip.id !== tripId))
   }
 
-  const tripWord = trips.length === 1 ? 'поездка' : (trips.length >= 2 && trips.length <= 4) ? 'поездки' : 'поездок'
+  // завершённые поездки видны только в профиле
+  const visibleTrips = trips.filter((trip) => !trip.is_completed)
 
   return (
-    <div className="page-wrapper">
-      <div className="dashboard container">
-        <div className="dashboard-header">
-          <div>
-            <h1>Мои поездки</h1>
-            <p className="dashboard-subtitle">
-              {trips.length > 0 ? `У вас ${trips.length} ${tripWord}` : 'Пока нет ни одной поездки'}
-            </p>
-          </div>
-          <button className="btn btn-primary" onClick={() => setShowModal(true)}>
-            + Создать поездку
+    <div className="page-wrapper container">
+      <div className="dashboard-header">
+        <h2>Мои поездки</h2>
+        {!isCreating && (
+          <button type="button" className="btn btn-primary" onClick={() => setIsCreating(true)}>
+            Создать поездку
           </button>
-        </div>
-
-        {trips.length === 0 ? (
-          <div className="empty-state">
-            <div className="empty-icon">🗺</div>
-            <h2>Пока пусто</h2>
-            <p>Создайте свою первую поездку и начните планировать!</p>
-            <button className="btn btn-primary" onClick={() => setShowModal(true)}>
-              Создать поездку
-            </button>
-          </div>
-        ) : (
-          <div className="trips-grid">
-            {trips.map((trip) => (
-              <div key={trip.id} className="trip-card">
-                <div className="trip-card-header">
-                  <span className={`trip-status status-${trip.status}`}>
-                    {statusLabels[trip.status] || trip.status}
-                  </span>
-                  <button className="trip-delete-btn" onClick={() => handleDeleteTrip(trip.id)} title="Удалить">
-                    ×
-                  </button>
-                </div>
-                <h3 className="trip-card-title">{trip.title}</h3>
-                <div className="trip-card-location">
-                  📍 {trip.city}, {trip.country}
-                </div>
-                <div className="trip-card-dates">
-                  🗓 {formatDate(trip.start_date)} — {formatDate(trip.end_date)}
-                </div>
-                {trip.description && <p className="trip-card-desc">{trip.description}</p>}
-              </div>
-            ))}
-          </div>
         )}
       </div>
 
-      {showModal && <AddTripModal onCreate={handleCreateTrip} onClose={() => setShowModal(false)} />}
+      {isCreating && (
+        <div className="dashboard-create-panel">
+          <h3>Новая поездка</h3>
+          <TripForm onSaved={handleCreated} onCancel={() => setIsCreating(false)} />
+        </div>
+      )}
+
+      {isLoading && <p>Загрузка...</p>}
+
+      {!isLoading && visibleTrips.length === 0 && !isCreating && (
+        <p className="dashboard-empty">Пока нет ни одной поездки — самое время создать первую.</p>
+      )}
+
+      <div className="trip-list">
+        {visibleTrips.map((trip) => (
+          <TripRow key={trip.id} trip={trip} onDeleted={handleDeleted} onUpdated={handleUpdated} />
+        ))}
+      </div>
     </div>
   )
 }

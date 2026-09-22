@@ -9,9 +9,10 @@
   --color-primary-dark: #27ae60;
   --color-primary-light: #a3f5c0;
   --color-primary-bg: #f0fdf4;
-  --color-bg: #ffffff;
-  --color-bg-secondary: #f7fdf9;
+  --color-bg: #fffdf8;
+  --color-bg-secondary: #f8faf5;
   --color-bg-card: #ffffff;
+  --navbar-bg: rgba(255, 253, 248, 0.92);
   --color-text: #1a1a2e;
   --color-text-muted: #6b7280;
   --color-border: #e0ede6;
@@ -25,6 +26,24 @@
   --radius-lg: 16px;
   --radius-xl: 24px;
   --font: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+  color-scheme: light;
+}
+
+/* Тёмная тема */
+:root[data-theme='dark'] {
+  --color-primary-bg: #16281d;
+  --color-bg: #0f1511;
+  --color-bg-secondary: #151d18;
+  --color-bg-card: #1a241e;
+  --navbar-bg: rgba(15, 21, 17, 0.92);
+  --color-text: #e8f1ea;
+  --color-text-muted: #98a89d;
+  --color-border: #27342c;
+  --color-danger-bg: #3a1f1f;
+  color-scheme: dark;
+  --shadow-sm: 0 1px 3px rgba(0, 0, 0, 0.5);
+  --shadow-md: 0 4px 12px rgba(0, 0, 0, 0.5);
+  --shadow-lg: 0 8px 30px rgba(0, 0, 0, 0.6);
 }
 
 html {
@@ -51,9 +70,15 @@ button {
   outline: none;
 }
 
+option {
+  background: var(--color-bg-card);
+  color: var(--color-text);
+}
+
 input, textarea, select {
   font-family: var(--font);
   outline: none;
+  color: var(--color-text);
 }
 
 .loading-screen {
@@ -169,4 +194,20 @@ a.btn {
   border-radius: var(--radius-sm);
   font-size: 0.9rem;
   margin-bottom: 16px;
+}
+
+.alert-success {
+  padding: 12px 16px;
+  background: var(--color-primary-bg);
+  color: var(--color-primary-dark);
+  border-radius: var(--radius-sm);
+  font-size: 0.9rem;
+  margin-bottom: 16px;
+}
+
+/* Звёздочка у обязательных полей */
+.required-mark {
+  color: var(--color-danger);
+  margin-left: 2px;
+  font-size: 0.85em;
 }

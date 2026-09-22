@@ -1,0 +1,19 @@
+.world-map svg {
+  width: 100%;
+  height: auto;
+  display: block;
+}
+
+.world-map path {
+  fill: #ffffff;
+  stroke: #b9c7bf;
+  stroke-width: 0.4;
+  transition: fill 0.25s ease;
+}
+
+/* у стран из нескольких частей класс стоит на группе <g> */
+.world-map path.world-map-visited,
+.world-map g.world-map-visited path {
+  fill: var(--color-primary);
+  stroke: var(--color-primary-dark);
+}

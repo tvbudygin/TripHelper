@@ -1,0 +1,38 @@
+.budget-total {
+  font-weight: 700;
+  color: var(--color-primary-dark);
+  font-size: 1.1rem;
+}
+
+.budget-breakdown {
+  list-style: none;
+  margin-bottom: 16px;
+}
+
+.budget-breakdown li {
+  display: flex;
+  justify-content: space-between;
+  padding: 6px 0;
+  color: var(--color-text-muted);
+  border-bottom: 1px dashed var(--color-border);
+}
+
+.budget-expense-list {
+  margin-bottom: 16px;
+}
+
+.budget-form {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+
+.budget-form input {
+  flex: 1;
+  min-width: 140px;
+  padding: 10px 14px;
+  border: 2px solid var(--color-border);
+  border-radius: var(--radius-sm);
+  background: var(--color-bg);
+  color: var(--color-text);
+}

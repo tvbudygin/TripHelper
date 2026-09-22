@@ -11,3 +11,5 @@ build/
 .vscode/
 *.db
 .DS_Store
+uploads/
+logs/

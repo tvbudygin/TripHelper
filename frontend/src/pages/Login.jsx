@@ -1,80 +1,81 @@
 import { useState } from 'react'
-import { Link, useNavigate } from 'react-router-dom'
+import RequiredMark from '../components/RequiredMark.jsx'
+import { Link, useNavigate, useSearchParams } from 'react-router-dom'
+import { loginUser, fetchCurrentUser } from '../api/authApi.js'
+import { getErrorMessage } from '../api/errors.js'
 import { useAuth } from '../context/AuthContext.jsx'
-import { login as loginApi, getMe } from '../api/auth.js'
 import './Auth.css'
 
+/** Страница входа */
 function Login() {
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
-  const [error, setError] = useState('')
-  const [loading, setLoading] = useState(false)
-  const { loginWithUser } = useAuth()
-  const navigate = useNavigate()
+  const [errorMessage, setErrorMessage] = useState('')
+  const [isSubmitting, setIsSubmitting] = useState(false)
 
-  async function handleSubmit(e) {
-    e.preventDefault()
-    setError('')
-    setLoading(true)
+  const { saveSession } = useAuth()
+  const navigate = useNavigate()
+  const [searchParams] = useSearchParams()
+  const isJustVerified = searchParams.get('verified') === '1'
+
+  async function handleSubmit(event) {
+    event.preventDefault()
+    setErrorMessage('')
+    setIsSubmitting(true)
 
     try {
-      const tokenData = await loginApi(email, password)
-      localStorage.setItem('token', tokenData.access_token)
-      const user = await getMe()
-      loginWithUser(tokenData.access_token, user)
+      const { access_token: token } = await loginUser(email, password)
+      localStorage.setItem('th_access_token', token)
+      const currentUser = await fetchCurrentUser()
+      saveSession(token, currentUser)
       navigate('/dashboard')
-    } catch (err) {
-      setError(err.response?.data?.detail || 'Ошибка входа. Проверьте данные.')
+    } catch (error) {
+      setErrorMessage(getErrorMessage(error, 'Не удалось войти. Проверьте почту и пароль.'))
     } finally {
-      setLoading(false)
+      setIsSubmitting(false)
     }
   }
 
   return (
-    <div className="page-wrapper">
-      <div className="auth-page">
-        <div className="auth-card">
-          <div className="auth-header">
-            <h1>Вход в аккаунт</h1>
-            <p>Войдите, чтобы управлять своими путешествиями</p>
+    <div className="page-wrapper auth-page">
+      <div className="auth-card">
+        <h2>Вход в аккаунт</h2>
+        <p className="auth-card-subtitle">Рады видеть вас снова</p>
+
+        {isJustVerified && <div className="alert-success">Почта подтверждена, можно входить</div>}
+        {errorMessage && <div className="alert-error">{errorMessage}</div>}
+
+        <form onSubmit={handleSubmit}>
+          <div className="form-group">
+            <label htmlFor="email">Электронная почта<RequiredMark /></label>
+            <input
+              id="email"
+              type="email"
+              value={email}
+              onChange={(event) => setEmail(event.target.value)}
+              required
+            />
           </div>
 
-          {error && <div className="alert-error">{error}</div>}
+          <div className="form-group">
+            <label htmlFor="password">Пароль<RequiredMark /></label>
+            <input
+              id="password"
+              type="password"
+              value={password}
+              onChange={(event) => setPassword(event.target.value)}
+              required
+            />
+          </div>
 
-          <form onSubmit={handleSubmit}>
-            <div className="form-group">
-              <label htmlFor="email">Электронная почта</label>
-              <input
-                id="email"
-                type="email"
-                placeholder="example@mail.ru"
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-                required
-              />
-            </div>
+          <button type="submit" className="btn btn-primary" disabled={isSubmitting}>
+            {isSubmitting ? 'Входим...' : 'Войти'}
+          </button>
+        </form>
 
-            <div className="form-group">
-              <label htmlFor="password">Пароль</label>
-              <input
-                id="password"
-                type="password"
-                placeholder="Введите пароль"
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-                required
-              />
-            </div>
-
-            <button type="submit" className="btn btn-primary btn-full" disabled={loading}>
-              {loading ? 'Вход...' : 'Войти'}
-            </button>
-          </form>
-
-          <p className="auth-footer">
-            Нет аккаунта? <Link to="/register">Зарегистрироваться</Link>
-          </p>
-        </div>
+        <p className="auth-switch">
+          Нет аккаунта? <Link to="/register">Зарегистрироваться</Link>
+        </p>
       </div>
     </div>
   )

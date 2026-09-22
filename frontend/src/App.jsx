@@ -1,20 +1,19 @@
 import { Routes, Route, Navigate } from 'react-router-dom'
 import Navbar from './components/Navbar.jsx'
+import ChatWidget from './components/ChatWidget.jsx'
+import ProtectedRoute from './components/ProtectedRoute.jsx'
 import Landing from './pages/Landing.jsx'
 import Login from './pages/Login.jsx'
 import Register from './pages/Register.jsx'
 import Dashboard from './pages/Dashboard.jsx'
+import TripDetail from './pages/TripDetail.jsx'
 import Profile from './pages/Profile.jsx'
 import { useAuth } from './context/AuthContext.jsx'
 
-function ProtectedRoute({ children }) {
-  const { user, loading } = useAuth()
-  if (loading) return <div className="loading-screen">Загрузка...</div>
-  if (!user) return <Navigate to="/login" />
-  return children
-}
-
+/** Маршруты страниц */
 function App() {
+  const { user } = useAuth()
+
   return (
     <>
       <Navbar />
@@ -22,10 +21,34 @@ function App() {
         <Route path="/" element={<Landing />} />
         <Route path="/login" element={<Login />} />
         <Route path="/register" element={<Register />} />
-        <Route path="/dashboard" element={<ProtectedRoute><Dashboard /></ProtectedRoute>} />
-        <Route path="/profile" element={<ProtectedRoute><Profile /></ProtectedRoute>} />
-        <Route path="*" element={<Navigate to="/" />} />
+        <Route
+          path="/dashboard"
+          element={
+            <ProtectedRoute>
+              <Dashboard />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/trips/:tripId"
+          element={
+            <ProtectedRoute>
+              <TripDetail />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/profile"
+          element={
+            <ProtectedRoute>
+              <Profile />
+            </ProtectedRoute>
+          }
+        />
+        <Route path="*" element={<Navigate to="/" replace />} />
       </Routes>
+
+      {user && <ChatWidget />}
     </>
   )
 }
