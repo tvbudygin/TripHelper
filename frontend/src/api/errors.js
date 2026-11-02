@@ -5,7 +5,7 @@ export function getErrorMessage(error, fallbackMessage) {
   if (typeof detail === 'string') {
     return detail
   }
-  if (Array.isArray(detail) && detail.length > 0 && typeof detail[0]?.msg === 'string') {
+  if (Array.isArray(detail)) {
     return detail[0].msg
   }
   return fallbackMessage

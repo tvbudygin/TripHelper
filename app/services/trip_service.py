@@ -15,16 +15,15 @@ def get_owned_trip(db: Session, trip_id: str, user_id: str) -> Trip:
     return trip
 
 
-def complete_finished_trips(db: Session, user_id: str | None = None) -> None:
-    """Завершает поездки, у которых прошла дата окончания (кроме тех, что пользователь вернул сам)"""
+def complete_finished_trips(db: Session, user_id: str, today: date) -> None:
+    """Завершает поездки пользователя, у которых прошла дата окончания (кроме тех, что он вернул сам)"""
 
-    query = db.query(Trip).filter(
-        Trip.end_date < date.today(),
+    finished_trips = db.query(Trip).filter(
+        Trip.user_id == user_id,
+        Trip.end_date < today,
         Trip.is_completed.is_(False),
         Trip.auto_complete_blocked.is_(False),
     )
-    if user_id:
-        query = query.filter(Trip.user_id == user_id)
-    for trip in query.all():
+    for trip in finished_trips:
         trip.is_completed = True
     db.commit()

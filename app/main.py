@@ -6,12 +6,12 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import FileResponse
 from fastapi.staticfiles import StaticFiles
+from sqlalchemy import text
 from sqlalchemy.exc import OperationalError
 
 from app.config import PROJECT_ROOT, UPLOAD_DIR
 from app.database import engine, Base, SessionLocal
 from app.services.notification_service import generate_notifications_for_all_users
-from app.services.trip_service import complete_finished_trips
 from app.routers import auth, trips, profile, transport, accommodation, activity, notifications, uploads, chat, expenses
 
 try:
@@ -25,13 +25,12 @@ NOTIFICATION_CHECK_INTERVAL_SECONDS = 300
 
 
 def run_notification_checker() -> None:
-    """Раз в 5 минут создаёт напоминания и завершает поездки, у которых прошла дата окончания"""
+    """Раз в 5 минут создаёт напоминания"""
 
     while True:
         db = SessionLocal()
         try:
             generate_notifications_for_all_users(db)
-            complete_finished_trips(db)
         except Exception as error:
             print(f"[TripHelper] Ошибка фоновой проверки уведомлений: {error}")
         finally:
@@ -40,6 +39,14 @@ def run_notification_checker() -> None:
 
 
 app = FastAPI(title="TripHelper", description="Сервис-помощник путешественникам")
+
+
+@app.get("/api/health")
+def health_check():
+    """Проверяет, что приложение подключается к базе"""
+    with engine.connect() as connection:
+        connection.execute(text("SELECT 1"))
+    return {"status": "ok"}
 
 
 @app.on_event("startup")
@@ -68,9 +75,6 @@ app.include_router(profile.router, prefix="/api")
 app.include_router(uploads.router, prefix="/api")
 app.include_router(chat.router, prefix="/api")
 app.include_router(expenses.router, prefix="/api")
-
-# Загруженные файлы
-app.mount("/uploads", StaticFiles(directory=UPLOAD_DIR), name="uploads")
 
 
 FRONTEND_DIST = os.path.join(PROJECT_ROOT, "frontend", "dist")

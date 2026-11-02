@@ -96,6 +96,7 @@
   border-radius: var(--radius-md);
   font-size: 0.9rem;
   line-height: 1.4;
+  white-space: pre-wrap;
 }
 
 .chat-message-assistant {
@@ -128,6 +129,7 @@
 
 .chat-panel-form input {
   flex: 1;
+  min-width: 0;
   padding: 10px 14px;
   border: 2px solid var(--color-border);
   border-radius: var(--radius-sm);
@@ -138,4 +140,29 @@
 
 .chat-panel-form input:focus {
   border-color: var(--color-primary);
+}
+
+/* на телефоне чат на весь экран; dvh учитывает панели браузера, иначе поле ввода уходит под них */
+@media (max-width: 480px) {
+  .chat-panel {
+    right: -100%;
+    width: 100%;
+    max-width: 100%;
+    height: 100vh;
+    height: 100dvh;
+    border-left: none;
+  }
+
+  .chat-panel-open {
+    right: 0;
+  }
+
+  .chat-panel-form {
+    padding-bottom: calc(16px + env(safe-area-inset-bottom, 0px));
+  }
+
+  .chat-panel-form input {
+    min-width: 0;
+    font-size: 16px;
+  }
 }

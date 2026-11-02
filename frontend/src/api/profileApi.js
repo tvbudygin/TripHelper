@@ -1,10 +1,5 @@
 import { apiClient } from './ApiClient.js'
 
-/** Данные профиля */
-export function fetchProfile() {
-  return apiClient.get('/profile/')
-}
-
 /** Статистика путешествий */
 export function fetchStats() {
   return apiClient.get('/profile/stats')

@@ -15,7 +15,6 @@ class UserOut(BaseModel):
     id: str
     email: str
     full_name: str
-    avatar_url: str | None = None
     notifications_enabled: bool
     is_verified: bool
 

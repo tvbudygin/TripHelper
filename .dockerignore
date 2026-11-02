@@ -1,0 +1,11 @@
+**
+!requirements.txt
+!app/
+!app/**
+!frontend/
+!frontend/**
+frontend/node_modules
+frontend/dist
+**/__pycache__
+**/*.pyc
+**/.env*

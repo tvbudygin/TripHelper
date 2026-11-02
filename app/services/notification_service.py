@@ -28,6 +28,12 @@ def notify(db: Session, user: User, trip_id: str, entity_id: str, category: str,
     ))
 
 
+def forget_reminder(db: Session, category: str, entity_id: str) -> None:
+    """Удаляет напоминание, чтобы следующая проверка создала его с новыми данными"""
+
+    db.query(Notification).filter(Notification.category == category, Notification.entity_id == entity_id).delete()
+
+
 def _already_notified(db: Session, user_id: str, category: str, entity_id: str) -> bool:
     """Проверяет, было ли уже такое уведомление"""
 
@@ -42,11 +48,8 @@ def _already_notified(db: Session, user_id: str, category: str, entity_id: str) 
 def generate_upcoming_notifications(db: Session, user: User) -> None:
     """Создаёт напоминания о скорых поездках и отправлениях пользователя"""
 
-    if not user.notifications_enabled:
-        return
-
     user_id = user.id
-    now = datetime.utcnow()
+    now = datetime.now()
     today = now.date()
     trip_deadline = today + timedelta(days=UPCOMING_TRIP_DAYS)
 
@@ -89,7 +92,7 @@ def generate_upcoming_notifications(db: Session, user: User) -> None:
 def retry_unsent_emails(db: Session) -> None:
     """Повторно отправляет письма, которые не ушли с первого раза"""
 
-    since = datetime.utcnow() - timedelta(days=RETRY_EMAIL_DAYS)
+    since = datetime.now() - timedelta(days=RETRY_EMAIL_DAYS)
     unsent = (
         db.query(Notification)
         .filter(
@@ -101,7 +104,7 @@ def retry_unsent_emails(db: Session) -> None:
     )
     for notification in unsent:
         user = db.get(User, notification.user_id)
-        if user and user.notifications_enabled and send_email(user.email, notification.title, notification.message):
+        if user.notifications_enabled and send_email(user.email, notification.title, notification.message):
             notification.email_sent = True
     db.commit()
 
@@ -110,9 +113,5 @@ def generate_notifications_for_all_users(db: Session) -> None:
     """Создаёт напоминания для всех пользователей (вызывается из фоновой проверки)"""
 
     for user in db.query(User).filter(User.notifications_enabled.is_(True)).all():
-        try:
-            generate_upcoming_notifications(db, user)
-        except Exception as error:
-            db.rollback()
-            print(f"[TripHelper] Не удалось создать напоминания для {user.email}: {error}")
+        generate_upcoming_notifications(db, user)
     retry_unsent_emails(db)

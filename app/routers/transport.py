@@ -8,14 +8,15 @@ from app.models.transport import Transport
 from app.models.user import User
 from app.schemas.transport import TransportCreate, TransportOut, TransportUpdate
 from app.routers.auth import get_current_user
-from app.services.flight_status_service import fetch_real_status
-from app.services.notification_service import notify
+from app.services.flight_status_service import FlightServiceError, fetch_real_status
+from app.services.notification_service import forget_reminder, notify
 from app.services.trip_service import get_owned_trip
 
 router = APIRouter(prefix="/trips/{trip_id}/transports", tags=["transports"])
 
 # при этих статусах отправляем уведомление
 NOTIFY_ON_STATUSES = {"delayed", "cancelled", "changed", "landed"}
+STATUS_LABELS = {"delayed": "задержан", "cancelled": "отменён", "changed": "изменён", "landed": "приземлился"}
 
 # не уведомляем повторно, если время вылета сдвинулось меньше чем на 10 минут
 MEANINGFUL_TIME_CHANGE = timedelta(minutes=10)
@@ -55,23 +56,10 @@ def _set_status(
         )
     )
     if (status_changed or time_changed) and new_status in NOTIFY_ON_STATUSES:
-        message = f"{transport.departure_location} → {transport.arrival_location}: новый статус — {new_status}."
+        message = f"{transport.departure_location} → {transport.arrival_location}: новый статус: {STATUS_LABELS[new_status]}."
         if actual_departure_datetime:
             message += f" Новое время вылета: {actual_departure_datetime.strftime('%d.%m.%Y %H:%M')}."
         notify(db, user, trip_id, transport.id, "transport_status_changed", "Изменение перемещения", message)
-
-
-@router.get("/", response_model=list[TransportOut])
-def list_transports(trip_id: str, db: Session = Depends(get_db), current_user: User = Depends(get_current_user)):
-    """Список перемещений поездки"""
-
-    get_owned_trip(db, trip_id, current_user.id)
-    return (
-        db.query(Transport)
-        .filter(Transport.trip_id == trip_id)
-        .order_by(Transport.departure_datetime)
-        .all()
-    )
 
 
 @router.post("/", response_model=TransportOut, status_code=status.HTTP_201_CREATED)
@@ -106,6 +94,13 @@ def update_transport(
 
     updates = data.model_dump(exclude_unset=True)
     new_status = updates.pop("status", None)
+    # другой рейс или дата: прошлый результат проверки больше не относится к этому перемещению
+    if any(field in updates and updates[field] != getattr(transport, field) for field in ("ticket_number", "departure_datetime")):
+        transport.flight_summary = None
+    reminder_fields = ("departure_location", "arrival_location", "departure_datetime")
+    if any(field in updates and updates[field] != getattr(transport, field) for field in reminder_fields):
+        forget_reminder(db, "transport_upcoming", transport.id)
+
     for field, value in updates.items():
         setattr(transport, field, value)
 
@@ -129,17 +124,24 @@ def refresh_transport_status(
     get_owned_trip(db, trip_id, current_user.id)
     transport = get_owned_transport(db, trip_id, transport_id)
 
-    real_status = fetch_real_status(transport)
+    try:
+        real_status = fetch_real_status(transport)
+    except FlightServiceError:
+        raise HTTPException(
+            status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
+            detail="Сервис статусов рейсов сейчас недоступен, попробуйте позже",
+        )
     if real_status is None:
         raise HTTPException(
-            status_code=status.HTTP_502_BAD_GATEWAY,
-            detail="Не удалось получить статус рейса — проверьте номер рейса и попробуйте позже",
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Рейс не найден, проверьте номер и дату вылета",
         )
 
     _set_status(
         db, transport, real_status["status"], current_user, trip_id,
         actual_departure_datetime=real_status["actual_departure_datetime"],
     )
+    transport.flight_summary = real_status["summary"]
     db.commit()
     db.refresh(transport)
     return transport

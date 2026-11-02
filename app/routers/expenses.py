@@ -11,14 +11,6 @@ from app.services.trip_service import get_owned_trip
 router = APIRouter(prefix="/trips/{trip_id}/expenses", tags=["expenses"])
 
 
-@router.get("/", response_model=list[ExpenseOut])
-def list_expenses(trip_id: str, db: Session = Depends(get_db), current_user: User = Depends(get_current_user)):
-    """Список расходов поездки"""
-
-    get_owned_trip(db, trip_id, current_user.id)
-    return db.query(Expense).filter(Expense.trip_id == trip_id).order_by(Expense.created_at).all()
-
-
 @router.post("/", response_model=ExpenseOut, status_code=status.HTTP_201_CREATED)
 def create_expense(
     trip_id: str,

@@ -8,7 +8,7 @@ from app.database import Base
 
 
 class Activity(Base):
-    """Таблица активностей — музеи, экскурсии, рестораны и тд"""
+    """Таблица активностей - музеи, экскурсии, рестораны и тд"""
 
     __tablename__ = "activities"
 
@@ -25,7 +25,7 @@ class Activity(Base):
     price: Mapped[float | None] = mapped_column(Numeric(10, 2), nullable=True)
     document_url: Mapped[str | None] = mapped_column(String(500), nullable=True)
     notes: Mapped[str | None] = mapped_column(Text, nullable=True)
-    created_at: Mapped[datetime] = mapped_column(default=datetime.utcnow)
-    updated_at: Mapped[datetime] = mapped_column(default=datetime.utcnow, onupdate=datetime.utcnow)
+    created_at: Mapped[datetime] = mapped_column(default=datetime.now)
+    updated_at: Mapped[datetime] = mapped_column(default=datetime.now, onupdate=datetime.now)
 
     trip: Mapped["Trip"] = relationship(back_populates="activities")

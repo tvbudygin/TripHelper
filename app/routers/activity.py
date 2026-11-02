@@ -11,17 +11,13 @@ from app.services.trip_service import get_owned_trip
 router = APIRouter(prefix="/trips/{trip_id}/activities", tags=["activities"])
 
 
-@router.get("/", response_model=list[ActivityOut])
-def list_activities(trip_id: str, db: Session = Depends(get_db), current_user: User = Depends(get_current_user)):
-    """Показываю все активности поездки (музеи, экскурсии и тд), по дате посещения"""
+def _get_item(db: Session, trip_id: str, item_id: str) -> Activity:
+    """Находит запись поездки или отдаёт 404"""
 
-    get_owned_trip(db, trip_id, current_user.id)
-    return (
-        db.query(Activity)
-        .filter(Activity.trip_id == trip_id)
-        .order_by(Activity.visit_date)
-        .all()
-    )
+    item = db.query(Activity).filter(Activity.id == item_id, Activity.trip_id == trip_id).first()
+    if not item:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Активность не найдена")
+    return item
 
 
 @router.post("/", response_model=ActivityOut, status_code=status.HTTP_201_CREATED)
@@ -49,12 +45,10 @@ def update_activity(
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_user),
 ):
-    """Меняю данные активности — присылают только те поля, которые редактировали"""
+    """Меняю данные активности - присылают только те поля, которые редактировали"""
 
     get_owned_trip(db, trip_id, current_user.id)
-    activity = db.query(Activity).filter(Activity.id == activity_id, Activity.trip_id == trip_id).first()
-    if not activity:
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Активность не найдена")
+    activity = _get_item(db, trip_id, activity_id)
 
     for field, value in data.model_dump(exclude_unset=True).items():
         setattr(activity, field, value)
@@ -74,8 +68,6 @@ def delete_activity(
     """Удаляю активность, если она относится к поездке этого юзера"""
 
     get_owned_trip(db, trip_id, current_user.id)
-    found = db.query(Activity).filter(Activity.id == activity_id, Activity.trip_id == trip_id).first()
-    if not found:
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Активность не найдена")
+    found = _get_item(db, trip_id, activity_id)
     db.delete(found)
     db.commit()

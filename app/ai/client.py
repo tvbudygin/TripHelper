@@ -1,5 +1,7 @@
 """Запросы к языковой модели через OpenRouter"""
 
+import re
+
 import requests
 
 from app.config import OPENROUTER_API_KEY, OPENROUTER_BASE_URL, OPENROUTER_MODEL
@@ -9,15 +11,19 @@ REQUEST_TIMEOUT_SECONDS = 30
 # отбрасывем мусор модели по типу "User Safety: safe"
 MIN_REAL_REPLY_LENGTH = 15
 JUNK_REPLY_PREFIXES = ("user safety", "safety:")
+# бесплатная модель иногда подмешивает китайский/японский/корейский текст в русский ответ
+FOREIGN_SCRIPT_PATTERN = re.compile(r"[一-鿿぀-ヿ가-힯]")
 
 
 def looks_like_real_reply(text: str) -> bool:
-    """Проверка, что ответ модели — нормальный текст"""
+    """Проверка, что ответ модели - нормальный текст на русском"""
 
     stripped = text.strip().lower()
     if len(stripped) < MIN_REAL_REPLY_LENGTH:
         return False
-    return not any(stripped.startswith(prefix) for prefix in JUNK_REPLY_PREFIXES)
+    if any(stripped.startswith(prefix) for prefix in JUNK_REPLY_PREFIXES):
+        return False
+    return not FOREIGN_SCRIPT_PATTERN.search(text)
 
 
 def ask_model(messages: list[dict], model: str = OPENROUTER_MODEL) -> str | None:

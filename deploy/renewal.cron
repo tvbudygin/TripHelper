@@ -1,0 +1,4 @@
+# Ежедневно проверяет срок сертификата и продлевает его при необходимости
+SHELL=/bin/bash
+PATH=/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin
+17 3 * * * root bash /opt/triphelper/renew-cert.sh >> /opt/triphelper/cert-renew.log 2>&1

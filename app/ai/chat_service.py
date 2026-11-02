@@ -12,8 +12,9 @@ from app.models.activity import Activity
 from app.models.transport import Transport
 from app.models.trip import Trip
 
-OFF_TOPIC_ANSWER = "Я помогаю только с вопросами о путешествиях — задайте что-то про вашу поездку."
-UNAVAILABLE_ANSWER = "Не могу сейчас дать точный ответ — ИИ-помощник временно недоступен. Попробуйте позже."
+OFF_TOPIC_ANSWER = "Я помогаю только с вопросами о путешествиях, задайте что-то про вашу поездку."
+UNAVAILABLE_ANSWER = "Не могу сейчас дать точный ответ: ИИ-помощник временно недоступен. Попробуйте позже."
+STATS_ANSWER = "Такую статистику можно посмотреть в разделе «Профиль»: там показано, в скольких странах и городах вы были, сколько у вас поездок, и есть карта с отмеченными странами."
 
 
 def _find_relevant_trip(db: Session, user_id: str) -> Trip | None:
@@ -41,15 +42,32 @@ def _find_relevant_trip(db: Session, user_id: str) -> Trip | None:
     return db.query(Trip).filter(Trip.user_id == user_id).order_by(Trip.start_date.desc()).first()
 
 
+def _build_all_trips_summary(db: Session, user_id: str) -> str:
+    """Короткий список всех поездок пользователя - чтобы бот мог ответить, сколько их и куда"""
+
+    trips = db.query(Trip).filter(Trip.user_id == user_id).order_by(Trip.start_date).all()
+    if not trips:
+        return "У пользователя пока нет ни одной поездки в системе."
+
+    lines = [f"Всего поездок у пользователя: {len(trips)}."]
+    for trip in trips:
+        destinations = ", ".join([trip.city, trip.country, *(stop["country"] for stop in trip.extra_stops)])
+        state = "завершена" if trip.is_completed else "активна"
+        lines.append(f"- «{trip.title}»: {destinations}, с {trip.start_date} по {trip.end_date} ({state}).")
+    return "\n".join(lines)
+
+
 def _build_trip_context(db: Session, user_id: str) -> str:
     """Собирает данные о нужной поездке для агента"""
 
+    all_trips_summary = _build_all_trips_summary(db, user_id)
+
     trip = _find_relevant_trip(db, user_id)
     if not trip:
-        return "У пользователя пока нет ни одной поездки в системе."
+        return all_trips_summary
 
-    lines = [f"Поездка «{trip.title}»: город {trip.city}, страна {trip.country}, с {trip.start_date} по {trip.end_date}."]
-    for stop in trip.extra_stops or []:
+    lines = [all_trips_summary, "", f"Подробнее о поездке «{trip.title}»: город {trip.city}, страна {trip.country}, с {trip.start_date} по {trip.end_date}."]
+    for stop in trip.extra_stops:
         lines.append(f"Также в поездке: {stop.get('city') or 'город не указан'}, {stop.get('country')}.")
     if trip.origin_country:
         lines.append(f"Выезд из страны: {trip.origin_country}.")
@@ -124,12 +142,14 @@ def _build_trip_context(db: Session, user_id: str) -> str:
     return "\n".join(lines)
 
 
-def answer_message(db: Session, user_id: str, question: str, history: list[dict] | None = None) -> str:
+def answer_message(db: Session, user_id: str, question: str, history: list[dict]) -> str:
     """Отвечает на сообщение пользователя"""
 
     category = classify_question(question, history)
     if category == "off_topic":
         return OFF_TOPIC_ANSWER
+    if category == "stats":
+        return STATS_ANSWER
 
     trip_context = _build_trip_context(db, user_id)
     draft_answer = generate_answer(question, trip_context, history)

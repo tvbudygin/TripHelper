@@ -10,7 +10,7 @@
   display: flex;
   align-items: center;
   gap: 16px;
-  padding: 18px 20px;
+  padding: 24px 26px;
   cursor: pointer;
 }
 
@@ -19,9 +19,9 @@
 }
 
 .trip-row-toggle {
-  font-size: 1.1rem;
+  font-size: 1.3rem;
   color: var(--color-text-muted);
-  width: 16px;
+  width: 18px;
   flex-shrink: 0;
 }
 
@@ -42,7 +42,7 @@
 
 .trip-row-title {
   font-weight: 700;
-  font-size: 1.05rem;
+  font-size: 1.25rem;
 }
 
 .trip-row-status {
@@ -57,13 +57,18 @@
 .trip-row-place,
 .trip-row-dates {
   color: var(--color-text-muted);
-  font-size: 0.9rem;
+  font-size: 1rem;
 }
 
 .trip-row-actions {
   display: flex;
+  flex-wrap: wrap;
   gap: 8px;
-  flex-shrink: 0;
+}
+
+.trip-row-actions .btn {
+  padding: 5px 12px;
+  font-size: 0.8rem;
 }
 
 .trip-row-details {

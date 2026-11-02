@@ -8,7 +8,7 @@ class ChatSession {
     this.messages = [GREETING]
   }
 
-  /** Загружает историю чата (если её нет — остаётся приветствие) */
+  /** Загружает историю чата (если её нет - остаётся приветствие) */
   async loadHistory() {
     const history = await fetchMessages()
     if (history.length > 0) {

@@ -21,14 +21,13 @@ AGENT_SYSTEM_PROMPT = """Ты — помощник сервиса TripHelper. О
 MAX_ATTEMPTS = 2
 
 
-def generate_answer(question: str, trip_context: str, history: list[dict] | None = None) -> str | None:
+def generate_answer(question: str, trip_context: str, history: list[dict]) -> str | None:
     """Формирует ответ на вопрос. Возвращает None, если модель не ответила"""
 
     messages = [{"role": "system", "content": f"{AGENT_SYSTEM_PROMPT}\n\nДанные о поездке:\n{trip_context}"}]
-    messages.extend(history or [])
+    messages.extend(history)
     messages.append({"role": "user", "content": question})
 
-    reply = None
     for _ in range(MAX_ATTEMPTS):
         reply = ask_model(messages)
         if reply and looks_like_real_reply(reply):

@@ -1,8 +1,9 @@
 import { apiClient } from './ApiClient.js'
+import { getLocalToday } from '../utils/localDate.js'
 
 /** Список поездок */
 export function fetchTrips() {
-  return apiClient.get('/trips/')
+  return apiClient.get(`/trips/?today=${getLocalToday()}`)
 }
 
 /** Поездка со всеми перемещениями, жильём и активностями */
@@ -20,9 +21,15 @@ export function updateTrip(tripId, tripData) {
   return apiClient.patch(`/trips/${tripId}`, tripData)
 }
 
-/** Календарь поездки (.ics) */
-export function exportTripCalendar(tripId) {
-  return apiClient.getBlob(`/trips/${tripId}/export.ics`)
+/** Скачивает все поездки файлом календаря для Google или Apple Calendar */
+export async function downloadCalendar() {
+  const blob = await apiClient.getBlob('/trips/export.ics')
+  const url = URL.createObjectURL(blob)
+  const link = document.createElement('a')
+  link.href = url
+  link.download = 'TripHelper.ics'
+  link.click()
+  URL.revokeObjectURL(url)
 }
 
 /** Удаляет поездку */

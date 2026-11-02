@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
-import { fetchProfile, fetchStats, fetchVisitedCountries, updateNotificationSettings } from '../api/profileApi.js'
+import { fetchCurrentUser } from '../api/authApi.js'
+import { fetchStats, fetchVisitedCountries, updateNotificationSettings } from '../api/profileApi.js'
 import { fetchTrips, updateTrip } from '../api/tripsApi.js'
 import { useAuth } from '../context/AuthContext.jsx'
 import WorldMap from '../components/WorldMap.jsx'
@@ -42,7 +43,7 @@ function Profile() {
   }
 
   useEffect(() => {
-    fetchProfile().then(setProfile)
+    fetchCurrentUser().then(setProfile)
     fetchStats().then(setStats)
     fetchTrips().then(setTrips)
     fetchVisitedCountries().then(setVisitedCountries)
@@ -86,7 +87,7 @@ function Profile() {
     <div className="page-wrapper container">
       <div className="profile-header">
         <div className="profile-avatar">{profile.full_name.charAt(0).toUpperCase()}</div>
-        <div>
+        <div className="profile-header-info">
           <h2>{profile.full_name}</h2>
           <p>{profile.email}</p>
         </div>
@@ -145,7 +146,7 @@ function Profile() {
         {filteredTrips.map((trip) => (
           <li key={trip.id}>
             <Link to={`/trips/${trip.id}`}>
-              {trip.title} — {formatTripPlaces(trip)} ({getYear(trip.start_date)})
+              {trip.title} - {formatTripPlaces(trip)} ({getYear(trip.start_date)})
             </Link>
           </li>
         ))}
@@ -164,7 +165,7 @@ function Profile() {
               {completedTrips.map((trip) => (
                 <li key={trip.id} className="profile-completed-item">
                   <Link to={`/trips/${trip.id}`}>
-                    {trip.title} — {formatTripPlaces(trip)} ({getYear(trip.start_date)})
+                    {trip.title} - {formatTripPlaces(trip)} ({getYear(trip.start_date)})
                   </Link>
                   <button type="button" className="btn btn-secondary btn-sm" onClick={() => handleRestore(trip.id)}>
                     Вернуть

@@ -11,13 +11,6 @@ from app.models.user import User
 router = APIRouter(prefix="/profile", tags=["profile"])
 
 
-@router.get("/", response_model=UserOut)
-def get_profile(current_user: User = Depends(get_current_user)):
-    """Данные профиля"""
-
-    return current_user
-
-
 @router.get("/stats", response_model=StatsOut)
 def get_stats(db: Session = Depends(get_db), current_user: User = Depends(get_current_user)):
     """Статистика путешествий"""

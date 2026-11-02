@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react'
-import { fetchTrips } from '../api/tripsApi.js'
+import { downloadCalendar, fetchTrips } from '../api/tripsApi.js'
+import { getErrorMessage } from '../api/errors.js'
 import TripRow from '../components/TripRow.jsx'
 import TripForm from '../components/TripForm.jsx'
 import './Dashboard.css'
@@ -38,6 +39,15 @@ function Dashboard() {
     setTrips((current) => current.filter((trip) => trip.id !== tripId))
   }
 
+  /** Скачивает все поездки файлом календаря */
+  async function handleExportCalendar() {
+    try {
+      await downloadCalendar()
+    } catch (error) {
+      window.alert(getErrorMessage(error, 'Не удалось скачать календарь'))
+    }
+  }
+
   // завершённые поездки видны только в профиле
   const visibleTrips = trips.filter((trip) => !trip.is_completed)
 
@@ -45,11 +55,18 @@ function Dashboard() {
     <div className="page-wrapper container">
       <div className="dashboard-header">
         <h2>Мои поездки</h2>
-        {!isCreating && (
-          <button type="button" className="btn btn-primary" onClick={() => setIsCreating(true)}>
-            Создать поездку
-          </button>
-        )}
+        <div className="dashboard-header-actions">
+          {trips.length > 0 && (
+            <button type="button" className="btn btn-secondary btn-sm" onClick={handleExportCalendar}>
+              Импортировать в календарь
+            </button>
+          )}
+          {!isCreating && (
+            <button type="button" className="btn btn-primary btn-sm" onClick={() => setIsCreating(true)}>
+              Создать поездку
+            </button>
+          )}
+        </div>
       </div>
 
       {isCreating && (
@@ -62,7 +79,7 @@ function Dashboard() {
       {isLoading && <p>Загрузка...</p>}
 
       {!isLoading && visibleTrips.length === 0 && !isCreating && (
-        <p className="dashboard-empty">Пока нет ни одной поездки — самое время создать первую.</p>
+        <p className="dashboard-empty">Пока нет ни одной поездки. Самое время создать первую.</p>
       )}
 
       <div className="trip-list">

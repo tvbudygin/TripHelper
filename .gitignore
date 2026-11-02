@@ -13,3 +13,6 @@ build/
 .DS_Store
 uploads/
 logs/
+deploy/nginx/active.conf
+backups/
+image.tar.gz

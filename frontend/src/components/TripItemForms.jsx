@@ -1,17 +1,17 @@
 import { useState } from 'react'
 import RequiredMark from './RequiredMark.jsx'
 import { createItem, updateItem } from '../api/tripItemsApi.js'
-import { uploadAndParseDocument } from '../api/uploadsApi.js'
+import { openDocument, uploadAndParseDocument } from '../api/uploadsApi.js'
 import { getErrorMessage } from '../api/errors.js'
 import { CITY_SUGGESTIONS, getAirportSuggestions } from '../data/geoSuggestions.js'
 
 /** Формы перемещений, жилья и активностей (используются на странице поездки и в списке поездок) */
 
-export const TRANSPORT_TYPES = ['Самолёт', 'Поезд', 'Автобус', 'Автомобиль', 'Паром', 'Другое']
-export const ACCOMMODATION_TYPES = ['Отель', 'Апартаменты', 'Хостел', 'Другое']
-export const ACTIVITY_TYPES = ['Музей', 'Экскурсия', 'Концерт', 'Ресторан', 'Парк', 'Выставка', 'Другое']
+const TRANSPORT_TYPES = ['Самолёт', 'Поезд', 'Автобус', 'Автомобиль', 'Паром', 'Другое']
+const ACCOMMODATION_TYPES = ['Отель', 'Апартаменты', 'Хостел', 'Другое']
+const ACTIVITY_TYPES = ['Музей', 'Экскурсия', 'Концерт', 'Ресторан', 'Парк', 'Выставка', 'Другое']
 
-export const TRANSPORT_STATUS_LABELS = {
+const TRANSPORT_STATUS_LABELS = {
   scheduled: 'В расписании',
   delayed: 'Задержан',
   cancelled: 'Отменён',
@@ -21,7 +21,7 @@ export const TRANSPORT_STATUS_LABELS = {
 }
 
 /** Загрузка документа (билет, бронь) с распознаванием полей; kind: transport, accommodation или activity */
-export function DocumentField({ kind, documentUrl, onUploaded, onRecognized }) {
+function DocumentField({ kind, documentUrl, onUploaded, onRecognized }) {
   const [isUploading, setIsUploading] = useState(false)
   const [recognizeMessage, setRecognizeMessage] = useState('')
 
@@ -36,9 +36,9 @@ export function DocumentField({ kind, documentUrl, onUploaded, onRecognized }) {
       onUploaded(url)
       if (suggested) {
         onRecognized(suggested)
-        setRecognizeMessage('Данные распознаны — проверьте поля выше')
+        setRecognizeMessage('Данные распознаны, проверьте поля выше')
       } else {
-        setRecognizeMessage('Не удалось распознать документ — заполните поля вручную')
+        setRecognizeMessage('Не удалось распознать документ, заполните поля вручную')
       }
     } finally {
       setIsUploading(false)
@@ -47,7 +47,7 @@ export function DocumentField({ kind, documentUrl, onUploaded, onRecognized }) {
 
   return (
     <div className="form-group">
-      <label>Документ (PDF/фото) — попробуем распознать поля автоматически</label>
+      <label>Документ (PDF/фото): попробуем распознать поля автоматически</label>
       <input type="file" accept=".pdf,.jpg,.jpeg,.png" onChange={handleFileChange} />
       {isUploading && <span className="document-status">Распознаём документ...</span>}
       {!isUploading && documentUrl && <span className="document-status">Файл прикреплён</span>}
@@ -151,7 +151,7 @@ export function TransportForm({ tripId, initialItem, onSaved }) {
         </select>
       </div>
       <div className="form-group">
-        <label>Откуда — город</label>
+        <label>Откуда: город</label>
         <input
           value={departureLocation}
           onChange={(e) => setDepartureLocation(e.target.value)}
@@ -170,7 +170,7 @@ export function TransportForm({ tripId, initialItem, onSaved }) {
         </div>
       )}
       <div className="form-group">
-        <label>Куда — город</label>
+        <label>Куда: город</label>
         <input
           value={arrivalLocation}
           onChange={(e) => setArrivalLocation(e.target.value)}
@@ -366,7 +366,7 @@ export function AccommodationForm({ tripId, trip, initialItem, onSaved }) {
       </div>
       {isOutsideTrip && (
         <p className="form-warning">
-          Даты проживания выходят за пределы поездки ({trip.start_date} — {trip.end_date}).
+          Даты проживания выходят за пределы поездки ({trip.start_date} – {trip.end_date}).
         </p>
       )}
       <DocumentField
@@ -500,7 +500,7 @@ export function TripSection({ title, items, renderItem, onAddClick, onEditClick,
       <ul className="trip-item-list">
         {items.map((item) => (
           <li key={item.id} className="trip-item">
-            <div>{renderItem(item)}</div>
+            <div className="trip-item-content">{renderItem(item)}</div>
             <div className="trip-item-actions">
               <button type="button" className="btn btn-secondary btn-sm" onClick={() => onEditClick(item)}>
                 Изменить
@@ -513,6 +513,66 @@ export function TripSection({ title, items, renderItem, onAddClick, onEditClick,
         ))}
       </ul>
     </section>
+  )
+}
+
+/** Кнопка открытия прикреплённого файла */
+function OpenDocumentButton({ documentUrl }) {
+  const [errorMessage, setErrorMessage] = useState('')
+
+  async function handleOpen() {
+    setErrorMessage('')
+    try {
+      await openDocument(documentUrl)
+    } catch (error) {
+      setErrorMessage(getErrorMessage(error, 'Не удалось открыть документ'))
+    }
+  }
+
+  return (
+    <div className="document-open">
+      <button type="button" className="btn btn-secondary btn-sm" onClick={handleOpen}>
+        Открыть документ
+      </button>
+      {errorMessage && <div className="flight-status-error">{errorMessage}</div>}
+    </div>
+  )
+}
+
+/** Кнопка проверки рейса и результат строкой под временем */
+function FlightStatusCheck({ item, onRefreshStatus }) {
+  const [isChecking, setIsChecking] = useState(false)
+  const [errorMessage, setErrorMessage] = useState('')
+
+  async function handleCheck() {
+    setIsChecking(true)
+    setErrorMessage('')
+    try {
+      await onRefreshStatus(item.id)
+    } catch (error) {
+      setErrorMessage(getErrorMessage(error, 'Не удалось получить статус рейса'))
+    } finally {
+      setIsChecking(false)
+    }
+  }
+
+  return (
+    <>
+      <button
+        type="button"
+        className="btn btn-secondary btn-sm refresh-status-button"
+        onClick={handleCheck}
+        disabled={isChecking}
+      >
+        {isChecking ? 'Проверяем...' : 'Обновить статус'}
+      </button>
+      {item.flight_summary && (
+        <div className="flight-status-info">
+          Рейс {item.flight_summary} · {TRANSPORT_STATUS_LABELS[item.status] || item.status}
+        </div>
+      )}
+      {errorMessage && <div className="flight-status-error">{errorMessage}</div>}
+    </>
   )
 }
 
@@ -540,7 +600,7 @@ export function renderTransportItem(item, onRefreshStatus) {
       )}
       {item.actual_departure_datetime && (
         <span className="trip-item-meta trip-item-meta-alert">
-          {' '}— новое время: {item.actual_departure_datetime.replace('T', ' ')}
+          {' '}- новое время: {item.actual_departure_datetime.replace('T', ' ')}
         </span>
       )}
       {item.gate_or_platform && (
@@ -550,14 +610,9 @@ export function renderTransportItem(item, onRefreshStatus) {
       {item.carriage && <span className="trip-item-meta"> · вагон {item.carriage}</span>}
       {item.seat && <span className="trip-item-meta"> · место {item.seat}</span>}
       {item.type === 'Самолёт' && item.ticket_number && (
-        <button
-          type="button"
-          className="btn btn-secondary btn-sm refresh-status-button"
-          onClick={() => onRefreshStatus(item.id)}
-        >
-          Обновить статус
-        </button>
+        <FlightStatusCheck item={item} onRefreshStatus={onRefreshStatus} />
       )}
+      {item.document_url && <OpenDocumentButton documentUrl={item.document_url} />}
     </>
   )
 }
@@ -569,10 +624,11 @@ export function renderAccommodationItem(item) {
       <strong>{item.name || 'Без названия'}</strong> ({item.type})
       <br />
       <span className="trip-item-meta">
-        {item.check_in_date || '—'}{item.check_in_time && ` ${item.check_in_time}`} —{' '}
-        {item.check_out_date || '—'}{item.check_out_time && ` ${item.check_out_time}`}
+        {item.check_in_date || '-'}{item.check_in_time && ` ${item.check_in_time}`} –{' '}
+        {item.check_out_date || '-'}{item.check_out_time && ` ${item.check_out_time}`}
         {item.price != null && ` · ${item.price}`}
       </span>
+      {item.document_url && <OpenDocumentButton documentUrl={item.document_url} />}
     </>
   )
 }
@@ -588,6 +644,7 @@ export function renderActivityItem(item) {
         {(item.opening_time || item.closing_time) && ` · ${item.opening_time || '?'}–${item.closing_time || '?'}`}
         {item.price != null && ` · ${item.price}`}
       </span>
+      {item.document_url && <OpenDocumentButton documentUrl={item.document_url} />}
     </>
   )
 }

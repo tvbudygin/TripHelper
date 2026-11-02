@@ -1,8 +1,6 @@
 from datetime import datetime
 from pydantic import BaseModel
 
-STATUS_VALUES = ("scheduled", "delayed", "cancelled", "changed")
-
 
 class TransportCreate(BaseModel):
     """Данные для добавления перемещения"""
@@ -65,6 +63,7 @@ class TransportOut(BaseModel):
     seat: str | None = None
     status: str
     actual_departure_datetime: datetime | None = None
+    flight_summary: str | None = None
     document_url: str | None = None
     notes: str | None = None
 

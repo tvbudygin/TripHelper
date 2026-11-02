@@ -1,25 +1,27 @@
-from urllib.parse import quote
+from datetime import date
 
 from fastapi import APIRouter, Depends, HTTPException, status
 from fastapi.responses import Response
-from sqlalchemy.orm import Session, joinedload
+from sqlalchemy.orm import Session
 
 from app.database import get_db
+from app.models.notification import Notification
 from app.models.trip import Trip
 from app.models.user import User
 from app.schemas.trip import TripCreate, TripOut, TripDetailOut, TripUpdate
 from app.routers.auth import get_current_user
 from app.services.calendar_export_service import build_ics
+from app.services.notification_service import forget_reminder
 from app.services.trip_service import complete_finished_trips, get_owned_trip
 
 router = APIRouter(prefix="/trips", tags=["trips"])
 
 
 @router.get("/", response_model=list[TripOut])
-def list_trips(db: Session = Depends(get_db), current_user: User = Depends(get_current_user)):
-    """Список поездок пользователя"""
+def list_trips(today: date, db: Session = Depends(get_db), current_user: User = Depends(get_current_user)):
+    """Список поездок пользователя; today - сегодняшняя дата на его устройстве"""
 
-    complete_finished_trips(db, current_user.id)
+    complete_finished_trips(db, current_user.id, today)
     return db.query(Trip).filter(Trip.user_id == current_user.id).order_by(Trip.created_at.desc()).all()
 
 
@@ -40,7 +42,6 @@ def create_trip(data: TripCreate, db: Session = Depends(get_db), current_user: U
         city=data.city,
         start_date=data.start_date,
         end_date=data.end_date,
-        status="planning",
     )
     db.add(new_trip)
     db.commit()
@@ -48,25 +49,23 @@ def create_trip(data: TripCreate, db: Session = Depends(get_db), current_user: U
     return new_trip
 
 
+@router.get("/export.ics")
+def export_calendar(db: Session = Depends(get_db), current_user: User = Depends(get_current_user)):
+    """Скачать все поездки как файл календаря .ics"""
+
+    trips = db.query(Trip).filter(Trip.user_id == current_user.id).order_by(Trip.start_date).all()
+    return Response(
+        content=build_ics(trips),
+        media_type="text/calendar",
+        headers={"Content-Disposition": 'attachment; filename="TripHelper.ics"'},
+    )
+
+
 @router.get("/{trip_id}", response_model=TripDetailOut)
 def get_trip(trip_id: str, db: Session = Depends(get_db), current_user: User = Depends(get_current_user)):
     """Поездка со всеми перемещениями, жильём, активностями и расходами"""
 
-    complete_finished_trips(db, current_user.id)
-    trip = (
-        db.query(Trip)
-        .options(
-            joinedload(Trip.transports),
-            joinedload(Trip.accommodations),
-            joinedload(Trip.activities),
-            joinedload(Trip.expenses),
-        )
-        .filter(Trip.id == trip_id, Trip.user_id == current_user.id)
-        .first()
-    )
-    if not trip:
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Поездка не найдена")
-    return trip
+    return get_owned_trip(db, trip_id, current_user.id)
 
 
 @router.patch("/{trip_id}", response_model=TripOut)
@@ -86,6 +85,9 @@ def update_trip(
     if new_end < new_start:
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Дата окончания не может быть раньше начала")
 
+    if any(field in updates and updates[field] != getattr(trip, field) for field in ("title", "start_date")):
+        forget_reminder(db, "trip_upcoming", trip.id)
+
     for field, value in updates.items():
         setattr(trip, field, value)
 
@@ -98,22 +100,12 @@ def update_trip(
     return trip
 
 
-@router.get("/{trip_id}/export.ics")
-def export_trip_calendar(trip_id: str, db: Session = Depends(get_db), current_user: User = Depends(get_current_user)):
-    """Скачать поездку как файл календаря .ics"""
-
-    trip = get_owned_trip(db, trip_id, current_user.id)
-    return Response(
-        content=build_ics(trip),
-        media_type="text/calendar",
-        headers={"Content-Disposition": f"attachment; filename*=UTF-8''{quote(trip.title)}.ics"},
-    )
-
-
 @router.delete("/{trip_id}", status_code=status.HTTP_204_NO_CONTENT)
 def delete_trip(trip_id: str, db: Session = Depends(get_db), current_user: User = Depends(get_current_user)):
     """Удаление поездки"""
 
     found = get_owned_trip(db, trip_id, current_user.id)
+    # уведомления ссылаются на поездку, поэтому удаляем их вместе с ней
+    db.query(Notification).filter(Notification.trip_id == trip_id).delete()
     db.delete(found)
     db.commit()

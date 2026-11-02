@@ -2,6 +2,7 @@
   display: flex;
   align-items: flex-start;
   justify-content: space-between;
+  flex-wrap: wrap;
   gap: 16px;
   margin-bottom: 32px;
 }
@@ -45,11 +46,18 @@
   display: flex;
   align-items: center;
   justify-content: space-between;
-  gap: 16px;
+  flex-wrap: wrap;
+  gap: 12px 16px;
   background: var(--color-bg);
   border: 1px solid var(--color-border);
   border-radius: var(--radius-md);
   padding: 14px 18px;
+}
+
+.trip-item-content {
+  flex: 1 1 220px;
+  min-width: 0;
+  overflow-wrap: anywhere;
 }
 
 .trip-item-meta {
@@ -66,10 +74,24 @@
   margin-left: 12px;
 }
 
+.document-open {
+  margin-top: 8px;
+}
+
+.flight-status-info,
+.flight-status-error {
+  margin-top: 6px;
+  font-size: 0.85rem;
+}
+
+.flight-status-error {
+  color: var(--color-danger);
+}
+
 .trip-item-actions {
   display: flex;
+  flex-wrap: wrap;
   gap: 8px;
-  flex-shrink: 0;
 }
 
 .document-status {
@@ -120,6 +142,6 @@
 
 .trip-header-actions {
   display: flex;
+  flex-wrap: wrap;
   gap: 8px;
-  flex-shrink: 0;
 }

@@ -15,8 +15,8 @@ class ApiClient {
     })
   }
 
-  get(url, params) {
-    return this.instance.get(url, { params }).then((response) => response.data)
+  get(url) {
+    return this.instance.get(url).then((response) => response.data)
   }
 
   post(url, body) {

@@ -54,9 +54,7 @@ class TripOut(BaseModel):
     origin_country: str | None = None
     start_date: date
     end_date: date
-    status: str
     is_completed: bool
-    cover_image_url: str | None = None
     created_at: datetime
 
     class Config:

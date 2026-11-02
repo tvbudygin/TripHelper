@@ -11,17 +11,13 @@ from app.services.trip_service import get_owned_trip
 router = APIRouter(prefix="/trips/{trip_id}/accommodations", tags=["accommodations"])
 
 
-@router.get("/", response_model=list[AccommodationOut])
-def list_accommodations(trip_id: str, db: Session = Depends(get_db), current_user: User = Depends(get_current_user)):
-    """Список жилья поездки"""
+def _get_item(db: Session, trip_id: str, item_id: str) -> Accommodation:
+    """Находит запись поездки или отдаёт 404"""
 
-    get_owned_trip(db, trip_id, current_user.id)
-    return (
-        db.query(Accommodation)
-        .filter(Accommodation.trip_id == trip_id)
-        .order_by(Accommodation.check_in_date)
-        .all()
-    )
+    item = db.query(Accommodation).filter(Accommodation.id == item_id, Accommodation.trip_id == trip_id).first()
+    if not item:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Жильё не найдено")
+    return item
 
 
 @router.post("/", response_model=AccommodationOut, status_code=status.HTTP_201_CREATED)
@@ -58,11 +54,7 @@ def update_accommodation(
     """Изменение жилья"""
 
     get_owned_trip(db, trip_id, current_user.id)
-    accommodation = db.query(Accommodation).filter(
-        Accommodation.id == accommodation_id, Accommodation.trip_id == trip_id
-    ).first()
-    if not accommodation:
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Жильё не найдено")
+    accommodation = _get_item(db, trip_id, accommodation_id)
 
     updates = data.model_dump(exclude_unset=True)
     new_check_in = updates.get("check_in_date", accommodation.check_in_date)
@@ -91,10 +83,6 @@ def delete_accommodation(
     """Удаление жилья"""
 
     get_owned_trip(db, trip_id, current_user.id)
-    found = db.query(Accommodation).filter(
-        Accommodation.id == accommodation_id, Accommodation.trip_id == trip_id
-    ).first()
-    if not found:
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Жильё не найдено")
+    found = _get_item(db, trip_id, accommodation_id)
     db.delete(found)
     db.commit()

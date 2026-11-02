@@ -1,0 +1,83 @@
+name: Проверка и выкладка Docker
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: triphelper-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  build:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 25
+    steps:
+      - uses: actions/checkout@v4
+      - name: Проверка Python
+        run: python -m compileall -q app main.py
+      - name: Сборка приложения
+        run: docker build -t "triphelper:$GITHUB_SHA" .
+      - name: Запуск с тестовой базой
+        run: |
+          cp deploy/.env.example deploy/.env
+          printf '\nPOSTGRES_PASSWORD=ci_test_password\nSECRET_KEY=ci_test_secret\nAPP_IMAGE=triphelper:%s\nFRONTEND_BASE_URL=http://localhost\n' "$GITHUB_SHA" >> deploy/.env
+          cp deploy/nginx/http.conf deploy/nginx/active.conf
+          docker compose -f deploy/compose.yml up -d --wait --wait-timeout 180
+          python deploy/smoke_test.py http://localhost
+          curl --fail http://localhost/api/health
+          curl --fail http://localhost/help | grep 'type="module"'
+          test "$(curl -s -o /dev/null -w '%{http_code}' http://localhost/api/auth/me)" = 401
+      - name: Логи при ошибке
+        if: failure()
+        run: docker compose -f deploy/compose.yml logs --tail 80
+      - name: Остановка тестового окружения
+        if: always()
+        run: docker compose -f deploy/compose.yml down -v
+      - name: Упаковка образа
+        if: github.event_name != 'pull_request' && github.ref == 'refs/heads/main' && vars.DEPLOY_ENABLED == 'true'
+        run: docker save "triphelper:$GITHUB_SHA" | gzip > image.tar.gz
+      - uses: actions/upload-artifact@v4
+        if: github.event_name != 'pull_request' && github.ref == 'refs/heads/main' && vars.DEPLOY_ENABLED == 'true'
+        with:
+          name: docker-image
+          path: image.tar.gz
+          retention-days: 1
+
+  deploy:
+    needs: build
+    if: github.event_name != 'pull_request' && github.ref == 'refs/heads/main' && vars.DEPLOY_ENABLED == 'true'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    concurrency:
+      group: triphelper-production
+      cancel-in-progress: false
+    env:
+      DEPLOY_HOST: ${{ vars.DEPLOY_HOST || '185.175.226.33' }}
+      DEPLOY_USER: ${{ vars.DEPLOY_USER || 'deploy' }}
+      DEPLOY_PORT: ${{ vars.DEPLOY_PORT || '22' }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/download-artifact@v4
+        with:
+          name: docker-image
+      - name: Настройка SSH
+        env:
+          SSH_KEY: ${{ secrets.DEPLOY_SSH_KEY }}
+        run: |
+          mkdir -p ~/.ssh
+          chmod 700 ~/.ssh
+          printf '%s\n' "$SSH_KEY" > ~/.ssh/id_ed25519
+          cp deploy/known_hosts ~/.ssh/known_hosts
+          chmod 600 ~/.ssh/id_ed25519 ~/.ssh/known_hosts
+      - name: Передача и запуск
+        run: |
+          ssh -p "$DEPLOY_PORT" "$DEPLOY_USER@$DEPLOY_HOST" 'mkdir -p /opt/triphelper/incoming/nginx'
+          scp -P "$DEPLOY_PORT" image.tar.gz deploy/compose.yml deploy/update.sh deploy/enable-https.sh deploy/renew-cert.sh "$DEPLOY_USER@$DEPLOY_HOST:/opt/triphelper/incoming/"
+          scp -P "$DEPLOY_PORT" deploy/nginx/http.conf deploy/nginx/https.conf.template "$DEPLOY_USER@$DEPLOY_HOST:/opt/triphelper/incoming/nginx/"
+          ssh -p "$DEPLOY_PORT" "$DEPLOY_USER@$DEPLOY_HOST" "bash /opt/triphelper/incoming/update.sh '$GITHUB_SHA'"

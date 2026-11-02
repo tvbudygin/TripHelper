@@ -55,10 +55,16 @@ def _event(uid: str, summary: str, start_line: str, end_line: str, description: 
     return lines
 
 
-def build_ics(trip: Trip) -> str:
-    """Собирает календарь поездки: перемещения, жильё и активности"""
+def _trip_events(trip: Trip) -> list[str]:
+    """События одной поездки: сама поездка, перемещения, жильё и активности"""
 
-    lines = ["BEGIN:VCALENDAR", "VERSION:2.0", "PRODID:-//TripHelper//RU", "CALSCALE:GREGORIAN"]
+    lines = _event(
+        uid=f"trip-{trip.id}",
+        summary=f"Поездка: {trip.title}",
+        start_line=f"DTSTART;VALUE=DATE:{_format_date(trip.start_date)}",
+        end_line=f"DTEND;VALUE=DATE:{_format_date(trip.end_date + timedelta(days=1))}",
+        description=f"{trip.city}, {trip.country}",
+    )
 
     for transport in trip.transports:
         if not transport.departure_datetime:
@@ -116,5 +122,14 @@ def build_ics(trip: Trip) -> str:
             description=", ".join(part for part in (working_hours, activity.address) if part),
         )
 
+    return lines
+
+
+def build_ics(trips: list[Trip]) -> str:
+    """Собирает календарь из всех поездок"""
+
+    lines = ["BEGIN:VCALENDAR", "VERSION:2.0", "PRODID:-//TripHelper//RU", "CALSCALE:GREGORIAN"]
+    for trip in trips:
+        lines += _trip_events(trip)
     lines.append("END:VCALENDAR")
     return "\r\n".join(lines) + "\r\n"

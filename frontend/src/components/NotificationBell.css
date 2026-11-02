@@ -1,5 +1,6 @@
 .notification-bell {
   position: relative;
+  display: flex;
 }
 
 .notification-bell-button {
@@ -27,6 +28,7 @@
   right: 0;
   top: calc(100% + 8px);
   width: 320px;
+  max-width: calc(100vw - 32px);
   max-height: 400px;
   overflow-y: auto;
   background: var(--color-bg);
@@ -96,4 +98,20 @@
 .notification-message {
   font-size: 0.8rem;
   color: var(--color-text-muted);
+}
+
+/* на телефоне список занимает всю ширину под меню */
+@media (max-width: 480px) {
+  .notification-bell {
+    position: static;
+  }
+
+  .notification-dropdown {
+    left: 0;
+    right: 0;
+    top: 100%;
+    width: auto;
+    max-width: none;
+    margin: 8px 16px 0;
+  }
 }

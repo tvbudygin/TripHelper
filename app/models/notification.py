@@ -20,11 +20,11 @@ class Notification(Base):
     title: Mapped[str] = mapped_column(String(200), nullable=False)
     message: Mapped[str] = mapped_column(Text, nullable=False)
     is_read: Mapped[bool] = mapped_column(Boolean, default=False)
-    # ушло ли письмо (если нет — отправка повторится)
+    # ушло ли письмо (если нет - отправка повторится)
     email_sent: Mapped[bool] = mapped_column(Boolean, default=True)
     # удалённые уведомления только скрываем, чтобы напоминание не создалось заново
     is_deleted: Mapped[bool] = mapped_column(Boolean, default=False)
-    created_at: Mapped[datetime] = mapped_column(default=datetime.utcnow)
+    created_at: Mapped[datetime] = mapped_column(default=datetime.now)
 
     user: Mapped["User"] = relationship()
     trip: Mapped["Trip"] = relationship()

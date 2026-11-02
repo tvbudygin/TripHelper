@@ -5,8 +5,20 @@
   margin-bottom: 40px;
 }
 
+.profile-header-info {
+  flex: 1;
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+
 .profile-logout {
   margin-left: auto;
+}
+
+@media (max-width: 480px) {
+  .profile-header {
+    flex-wrap: wrap;
+  }
 }
 
 .profile-avatar {

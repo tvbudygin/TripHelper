@@ -129,7 +129,7 @@ function TripForm({ trip, onSaved, onCancel }) {
             <div className="country-chips">
               {extraStops.map((stop, index) => (
                 <span key={`${stop.country}-${index}`} className="country-chip">
-                  {stop.city ? `${stop.country} — ${stop.city}` : stop.country}
+                  {stop.city ? `${stop.country} - ${stop.city}` : stop.country}
                   <button type="button" aria-label={`Убрать ${stop.country}`} onClick={() => handleRemoveStop(index)}>×</button>
                 </span>
               ))}

@@ -1,9 +1,8 @@
 import { useEffect, useState } from 'react'
-import { formatTripOrigin, formatTripPlaces } from '../utils/tripCountries.js'
+import { formatTripPlaces } from '../utils/tripCountries.js'
 import { useParams } from 'react-router-dom'
-import { fetchTripDetails, exportTripCalendar } from '../api/tripsApi.js'
+import { fetchTripDetails } from '../api/tripsApi.js'
 import { deleteItem, refreshTransportStatus } from '../api/tripItemsApi.js'
-import { getErrorMessage } from '../api/errors.js'
 import AddTripModal from '../components/AddTripModal.jsx'
 import Modal from '../components/Modal.jsx'
 import BudgetSection from '../components/BudgetSection.jsx'
@@ -23,7 +22,7 @@ function TripDetail() {
   const { tripId } = useParams()
   const [trip, setTrip] = useState(null)
   const [isEditingTrip, setIsEditingTrip] = useState(false)
-  // itemModal: какая форма открыта и какой элемент редактируется (null — новый)
+  // itemModal: какая форма открыта и какой элемент редактируется (null - новый)
   const [itemModal, setItemModal] = useState(null)
 
   useEffect(() => {
@@ -55,27 +54,8 @@ function TripDetail() {
 
   /** Обновляет статус рейса */
   async function handleRefreshStatus(transportId) {
-    try {
-      const updated = await refreshTransportStatus(tripId, transportId)
-      handleItemSaved('transports', updated)
-    } catch (error) {
-      window.alert(getErrorMessage(error, 'Не удалось получить статус рейса'))
-    }
-  }
-
-  /** Скачивает календарь поездки (.ics) */
-  async function handleExportCalendar() {
-    try {
-      const blob = await exportTripCalendar(tripId)
-      const url = URL.createObjectURL(blob)
-      const link = document.createElement('a')
-      link.href = url
-      link.download = `${trip.title}.ics`
-      link.click()
-      URL.revokeObjectURL(url)
-    } catch (error) {
-      window.alert(getErrorMessage(error, 'Не удалось скачать календарь'))
-    }
+    const updated = await refreshTransportStatus(tripId, transportId)
+    handleItemSaved('transports', updated)
   }
 
   function handleExpenseAdded(expense) {
@@ -104,14 +84,11 @@ function TripDetail() {
         <div>
           <h2>{trip.title}</h2>
           <p>{formatTripPlaces(trip)}</p>
-          {formatTripOrigin(trip) && <p className="trip-item-meta">Выезд из: {formatTripOrigin(trip)}</p>}
-          <p className="trip-item-meta">{trip.start_date} — {trip.end_date}</p>
+          {trip.origin_country && <p className="trip-item-meta">Выезд из: {trip.origin_country}</p>}
+          <p className="trip-item-meta">{trip.start_date} – {trip.end_date}</p>
           {trip.description && <p className="trip-description">{trip.description}</p>}
         </div>
         <div className="trip-header-actions">
-          <button type="button" className="btn btn-secondary btn-sm" onClick={handleExportCalendar}>
-            Скачать .ics
-          </button>
           <button type="button" className="btn btn-secondary btn-sm" onClick={() => setIsEditingTrip(true)}>
             Изменить поездку
           </button>

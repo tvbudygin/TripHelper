@@ -7,7 +7,6 @@ class ExpenseCreate(BaseModel):
 
     title: str
     amount: float
-    category: str | None = None
 
 
 class ExpenseOut(BaseModel):
@@ -17,7 +16,6 @@ class ExpenseOut(BaseModel):
     trip_id: str
     title: str
     amount: float
-    category: str | None = None
     created_at: datetime
 
     class Config:

@@ -1,9 +1,9 @@
 import { useState } from 'react'
 import { formatTripPlaces } from '../utils/tripCountries.js'
+import { getLocalToday } from '../utils/localDate.js'
 import { Link } from 'react-router-dom'
 import { fetchTripDetails, deleteTrip, updateTrip } from '../api/tripsApi.js'
 import { deleteItem, refreshTransportStatus } from '../api/tripItemsApi.js'
-import { getErrorMessage } from '../api/errors.js'
 import AddTripModal from './AddTripModal.jsx'
 import Modal from './Modal.jsx'
 import {
@@ -17,10 +17,11 @@ import {
 } from './TripItemForms.jsx'
 import './TripRow.css'
 
-const STATUS_LABELS = {
-  planning: 'Планируется',
-  active: 'Идёт сейчас',
-  done: 'Завершена',
+/** Статус поездки по датам */
+function getTripStatus(trip) {
+  const today = getLocalToday()
+  if (trip.is_completed || trip.end_date < today) return 'Завершена'
+  return trip.start_date <= today ? 'Идёт сейчас' : 'Планируется'
 }
 
 /** Форматирует дату: 01.05.2026 */
@@ -35,7 +36,7 @@ function TripRow({ trip, onDeleted, onUpdated }) {
   const [details, setDetails] = useState(null)
   const [isLoadingDetails, setIsLoadingDetails] = useState(false)
   const [isEditingTrip, setIsEditingTrip] = useState(false)
-  // itemModal: какая форма открыта и какой элемент редактируется (null — новый)
+  // itemModal: какая форма открыта и какой элемент редактируется (null - новый)
   const [itemModal, setItemModal] = useState(null)
 
   /** Разворачивает и сворачивает поездку (при первом открытии загружает детали) */
@@ -82,12 +83,8 @@ function TripRow({ trip, onDeleted, onUpdated }) {
   }
 
   async function handleRefreshStatus(transportId) {
-    try {
-      const updated = await refreshTransportStatus(trip.id, transportId)
-      handleItemSaved('transports', updated)
-    } catch (error) {
-      window.alert(getErrorMessage(error, 'Не удалось получить статус рейса'))
-    }
+    const updated = await refreshTransportStatus(trip.id, transportId)
+    handleItemSaved('transports', updated)
   }
 
   async function handleItemDelete(resource, resourceKey, itemId) {
@@ -106,10 +103,10 @@ function TripRow({ trip, onDeleted, onUpdated }) {
         <div className="trip-row-main">
           <div className="trip-row-title-line">
             <span className="trip-row-title">{trip.title}</span>
-            <span className="trip-row-status">{STATUS_LABELS[trip.status] || trip.status}</span>
+            <span className="trip-row-status">{getTripStatus(trip)}</span>
           </div>
           <span className="trip-row-place">{formatTripPlaces(trip)}</span>
-          <span className="trip-row-dates">{formatDate(trip.start_date)} — {formatDate(trip.end_date)}</span>
+          <span className="trip-row-dates">{formatDate(trip.start_date)} – {formatDate(trip.end_date)}</span>
         </div>
 
         <div className="trip-row-actions" onClick={(event) => event.stopPropagation()}>

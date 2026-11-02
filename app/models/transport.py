@@ -8,7 +8,7 @@ from app.database import Base
 
 
 class Transport(Base):
-    """Таблица перемещений — самолёты, поезда, автобусы и тд"""
+    """Таблица перемещений - самолёты, поезда, автобусы и тд"""
 
     __tablename__ = "transports"
 
@@ -24,16 +24,18 @@ class Transport(Base):
     price: Mapped[float | None] = mapped_column(Numeric(10, 2), nullable=True)
     ticket_number: Mapped[str | None] = mapped_column(String(100), nullable=True)
     airline: Mapped[str | None] = mapped_column(String(100), nullable=True)
-    # гейт, платформа или пирс — зависит от вида транспорта
+    # гейт, платформа или пирс - зависит от вида транспорта
     carriage: Mapped[str | None] = mapped_column(String(20), nullable=True)
     seat: Mapped[str | None] = mapped_column(String(20), nullable=True)
     gate_or_platform: Mapped[str | None] = mapped_column(String(50), nullable=True)
     status: Mapped[str] = mapped_column(String(20), default="scheduled")
     # новое время вылета, если рейс задержали
     actual_departure_datetime: Mapped[datetime | None] = mapped_column(DateTime, nullable=True)
+    # что нашлось по номеру рейса при последней проверке статуса
+    flight_summary: Mapped[str | None] = mapped_column(String(200), nullable=True)
     document_url: Mapped[str | None] = mapped_column(String(500), nullable=True)
     notes: Mapped[str | None] = mapped_column(Text, nullable=True)
-    created_at: Mapped[datetime] = mapped_column(default=datetime.utcnow)
-    updated_at: Mapped[datetime] = mapped_column(default=datetime.utcnow, onupdate=datetime.utcnow)
+    created_at: Mapped[datetime] = mapped_column(default=datetime.now)
+    updated_at: Mapped[datetime] = mapped_column(default=datetime.now, onupdate=datetime.now)
 
     trip: Mapped["Trip"] = relationship(back_populates="transports")

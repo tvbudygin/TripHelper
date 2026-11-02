@@ -3,6 +3,15 @@ import ChatSession from './ChatSession.js'
 import { getErrorMessage } from '../api/errors.js'
 import './ChatWidget.css'
 
+/** Показывает сообщение: **текст** становится жирным, длинное тире заменяется дефисом */
+function renderMessageContent(text) {
+  const parts = text.replaceAll('—', '-').split(/(\*\*[^*]+\*\*)/g)
+  return parts.map((part, index) => {
+    const boldMatch = part.match(/^\*\*([^*]+)\*\*$/)
+    return boldMatch ? <strong key={index}>{boldMatch[1]}</strong> : part
+  })
+}
+
 /** Кнопка чата и боковая панель с чатом */
 function ChatWidget() {
   const sessionRef = useRef(new ChatSession())
@@ -80,7 +89,7 @@ function ChatWidget() {
           <div className="chat-panel-messages" ref={messagesRef} onScroll={handleScroll}>
             {messages.map((message, index) => (
               <div key={index} className={`chat-message chat-message-${message.role}`}>
-                {message.content}
+                {renderMessageContent(message.content)}
               </div>
             ))}
             {isWaiting && <div className="chat-message chat-message-assistant chat-message-pending">Печатает...</div>}

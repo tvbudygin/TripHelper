@@ -1,6 +1,6 @@
 const THEME_STORAGE_KEY = 'th_theme'
 
-/** Сохранённая тема, а если её нет — системная */
+/** Сохранённая тема, а если её нет - системная */
 export function getInitialTheme() {
   const saved = localStorage.getItem(THEME_STORAGE_KEY)
   if (saved === 'light' || saved === 'dark') return saved

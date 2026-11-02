@@ -16,6 +16,7 @@ function Navbar() {
         </Link>
 
         <nav className="navbar-links">
+          <Link to="/help" className="nav-link">Помощь</Link>
           {user ? (
             <>
               <Link to="/dashboard" className="nav-link">Мои поездки</Link>
