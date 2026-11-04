@@ -134,7 +134,7 @@ def refresh_transport_status(
     if real_status is None:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
-            detail="Aviationstack не вернул рейс на указанную дату. Проверьте номер; бесплатный тариф предоставляет текущие рейсы",
+            detail="Не удалось найти рейс на указанную дату. Проверьте номер рейса и дату вылета",
         )
 
     _set_status(

@@ -160,7 +160,7 @@ export function TransportForm({ tripId, initialItem, onSaved }) {
       </div>
       {isPlane && (
         <div className="form-group">
-          <label>Аэропорт вылета (в городе их может быть несколько)</label>
+          <label>Аэропорт вылета</label>
           <input
             value={departureAirport}
             onChange={(e) => setDepartureAirport(e.target.value)}

@@ -42,9 +42,7 @@ def _pick_closest_flight(flights: list[dict], transport: Transport) -> dict | No
         # Если пользователь указал код аэропорта, исключаем другой участок маршрута
         mismatch = False
         for entered, airport in ((transport.departure_airport, departure), (transport.arrival_airport, arrival)):
-            text = (entered or "").strip().upper()
-            match = re.search(r"\(([A-Z]{3,4})\)", text)
-            code = match.group(1) if match else text
+            code = (entered or "").strip().upper()
             if re.fullmatch(r"[A-Z]{3,4}", code) and code not in (airport.get("iata"), airport.get("icao")):
                 mismatch = True
         if not mismatch:
