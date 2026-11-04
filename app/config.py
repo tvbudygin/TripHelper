@@ -12,9 +12,8 @@ PROJECT_ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 UPLOAD_DIR = os.path.join(PROJECT_ROOT, "uploads")
 MAX_UPLOAD_SIZE_BYTES = 10 * 1024 * 1024
 
-# Статус рейсов (AeroDataBox через RapidAPI)
-AERODATABOX_API_KEY = os.getenv("AERODATABOX_API_KEY")
-AERODATABOX_HOST = "aerodatabox.p.rapidapi.com"
+# Статус рейсов через Aviationstack
+AVIATIONSTACK_API_KEY = os.getenv("AVIATIONSTACK_API_KEY")
 
 # Модель для распознавания билетов и чата (OpenRouter)
 OPENROUTER_API_KEY = os.getenv("OPENROUTER_API_KEY")

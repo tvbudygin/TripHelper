@@ -119,28 +119,29 @@ def refresh_transport_status(
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_user),
 ):
-    """Обновляет статус рейса по данным AeroDataBox"""
+    """Обновляет статус рейса по данным Aviationstack"""
 
     get_owned_trip(db, trip_id, current_user.id)
     transport = get_owned_transport(db, trip_id, transport_id)
 
     try:
         real_status = fetch_real_status(transport)
-    except FlightServiceError:
+    except FlightServiceError as error:
         raise HTTPException(
             status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
-            detail="Сервис статусов рейсов сейчас недоступен, попробуйте позже",
+            detail=str(error),
         )
     if real_status is None:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
-            detail="Рейс не найден, проверьте номер и дату вылета",
+            detail="Aviationstack не вернул рейс на указанную дату. Проверьте номер; бесплатный тариф предоставляет текущие рейсы",
         )
 
     _set_status(
         db, transport, real_status["status"], current_user, trip_id,
         actual_departure_datetime=real_status["actual_departure_datetime"],
     )
+    transport.actual_departure_datetime = real_status["actual_departure_datetime"]
     transport.flight_summary = real_status["summary"]
     db.commit()
     db.refresh(transport)

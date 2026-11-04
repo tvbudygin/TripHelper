@@ -108,4 +108,4 @@ def confirm_email(token: str, db: Session = Depends(get_db)):
 
     user.is_verified = True
     db.commit()
-    return RedirectResponse(url=f"{FRONTEND_BASE_URL}/login?verified=1")
+    return RedirectResponse(url=f"{FRONTEND_BASE_URL.rstrip('/')}/")

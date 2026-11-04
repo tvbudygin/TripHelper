@@ -14,7 +14,7 @@ from app.ai.client import ask_model, looks_like_real_reply
 
 MAX_ATTEMPTS = 3
 MAX_TEXT_LENGTH = 6000
-# если в PDF меньше текста, то это скан и отправляем модели картинку
+# если текста мало, пробуем распознать первую страницу как картинку
 MIN_USABLE_TEXT_LENGTH = 40
 
 PROMPT_RULES = """Верни ТОЛЬКО JSON без пояснений и без markdown-обёртки.
@@ -92,10 +92,10 @@ def _extract_pdf_text(file_bytes: bytes) -> str:
 def _render_pdf_first_page_as_png(file_bytes: bytes) -> bytes:
     """Превращает первую страницу PDF в картинку"""
 
-    document = fitz.open(stream=file_bytes, filetype="pdf")
-    page = document.load_page(0)
-    pixmap = page.get_pixmap(dpi=150)
-    return pixmap.tobytes("png")
+    with fitz.open(stream=file_bytes, filetype="pdf") as document:
+        page = document.load_page(0)
+        pixmap = page.get_pixmap(dpi=150)
+        return pixmap.tobytes("png")
 
 
 def _parse_json_reply(reply: str) -> dict | None:

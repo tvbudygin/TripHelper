@@ -16,12 +16,12 @@ FOREIGN_SCRIPT_PATTERN = re.compile(r"[一-鿿぀-ヿ가-힯]")
 
 
 def looks_like_real_reply(text: str) -> bool:
-    """Проверка, что ответ модели - нормальный текст на русском"""
+    """Отбрасывает слишком короткий ответ, служебный текст и посторонние иероглифы"""
 
     stripped = text.strip().lower()
     if len(stripped) < MIN_REAL_REPLY_LENGTH:
         return False
-    if any(stripped.startswith(prefix) for prefix in JUNK_REPLY_PREFIXES):
+    if stripped.startswith(JUNK_REPLY_PREFIXES):
         return False
     return not FOREIGN_SCRIPT_PATTERN.search(text)
 

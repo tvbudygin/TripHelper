@@ -14,9 +14,11 @@ RETRY_EMAIL_DAYS = 2
 
 
 def notify(db: Session, user: User, trip_id: str, entity_id: str, category: str, title: str, message: str) -> None:
-    """Создаёт уведомление и отправляет копию на почту, если уведомления включены"""
+    """Создаёт уведомление; почтовую копию отправляет только на подтверждённый адрес"""
 
-    email_sent = send_email(user.email, title, message) if user.notifications_enabled else True
+    email_sent = True
+    if user.notifications_enabled:
+        email_sent = send_email(user.email, title, message) if user.is_verified else False
     db.add(Notification(
         user_id=user.id,
         trip_id=trip_id,
@@ -104,7 +106,7 @@ def retry_unsent_emails(db: Session) -> None:
     )
     for notification in unsent:
         user = db.get(User, notification.user_id)
-        if user.notifications_enabled and send_email(user.email, notification.title, notification.message):
+        if user.notifications_enabled and user.is_verified and send_email(user.email, notification.title, notification.message):
             notification.email_sent = True
     db.commit()
 
