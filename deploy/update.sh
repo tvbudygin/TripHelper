@@ -27,7 +27,7 @@ docker compose -f compose.yml up -d --wait --wait-timeout 180 db app
 # После замены приложения nginx должен заново разрешить его адрес
 docker compose -f compose.yml up -d --force-recreate nginx
 docker compose -f compose.yml exec -T nginx nginx -t
-# Проверяем JSON приложения, а не успешный редирект HTTP на HTTPS
+# Проверяем ответ приложения после перехода на HTTPS
 docker compose -f compose.yml exec -T nginx wget -qO- http://app:8000/api/health | grep -q '"status":"ok"'
 rm incoming/image.tar.gz
 echo "Обновлено: $release"

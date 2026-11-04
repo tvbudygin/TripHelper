@@ -3,7 +3,7 @@ import worldMapSvg from '../data/world-map.svg?raw'
 import { COUNTRY_NAME_TO_ISO, normalizeCountryName } from '../data/countries.js'
 import './WorldMap.css'
 
-/** Карта мира: страны из списка закрашиваются зелёным. Карта: simple-world-map (Al MacDonald, Fritz Lekschas), CC BY-SA 3.0 */
+/** Карта мира: страны из списка закрашиваются зелёным. Карта: simple-world-map (Al MacDonald, Fritz Lekschas) */
 function WorldMap({ visitedCountryNames }) {
   const containerRef = useRef(null)
 
