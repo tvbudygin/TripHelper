@@ -1,3 +1,6 @@
+#!/bin/bash
+
+# bash start.sh
 set -e
 
 docker compose up -d --build --wait
