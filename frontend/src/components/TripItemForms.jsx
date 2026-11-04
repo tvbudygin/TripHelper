@@ -568,7 +568,7 @@ function FlightStatusCheck({ item, onRefreshStatus }) {
       </button>
       {item.flight_summary && (
         <div className="flight-status-info">
-          Рейс {item.flight_summary} · {TRANSPORT_STATUS_LABELS[item.status] || item.status}
+          Рейс {item.flight_summary}
         </div>
       )}
       {errorMessage && <div className="flight-status-error">{errorMessage}</div>}
@@ -588,12 +588,10 @@ export function renderTransportItem(item, onRefreshStatus) {
           {' '}({item.departure_airport || '?'} → {item.arrival_airport || '?'})
         </span>
       )}
-      {item.status !== 'scheduled' && (
-        <span className={`status-badge status-${item.status}`}>{TRANSPORT_STATUS_LABELS[item.status]}</span>
-      )}
       <br />
       <span className="trip-item-meta">
-        {item.departure_datetime ? item.departure_datetime.replace('T', ' ') : 'дата не указана'}
+        {item.departure_datetime ? item.departure_datetime.replace('T', ' ').slice(0, 16) : 'дата не указана'}
+        {' | '}{TRANSPORT_STATUS_LABELS[item.status] || 'Статус неизвестен'}
       </span>
       {item.arrival_datetime && (
         <span className="trip-item-meta"> → прибытие {item.arrival_datetime.replace('T', ' ').slice(0, 16)}</span>

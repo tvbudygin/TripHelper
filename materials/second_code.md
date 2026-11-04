@@ -23,4 +23,4 @@
 
 ## Видео второго показа
 
-[Видео второго показа](https://drive.google.com/file/d/1Ci6ybZSCHjcFyajfOIZPptiXhPq5EV4w/view?usp=sharing).
+[Видео второго показа](https://triphelper.site/SiteVideo2.mp4)

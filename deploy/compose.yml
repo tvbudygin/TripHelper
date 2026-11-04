@@ -50,6 +50,7 @@ services:
       - "443:443"
     volumes:
       - ./nginx/active.conf:/etc/nginx/conf.d/default.conf:ro
+      - ./videos:/var/www/videos:ro
       - certificates:/etc/letsencrypt:ro
       - acme:/var/www/certbot:ro
     depends_on:

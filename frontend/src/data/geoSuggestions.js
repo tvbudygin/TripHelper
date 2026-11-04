@@ -39,9 +39,7 @@ const AIRPORTS_BY_CITY = {
   прага: ['Вацлава Гавела (PRG)'],
 }
 
-const ALL_AIRPORTS = [...new Set(Object.values(AIRPORTS_BY_CITY).flat())]
-
-/** Аэропорты города (или все, если города нет в списке) */
+/** Возвращает аэропорты города, если он есть в справочнике */
 export function getAirportSuggestions(city) {
-  return AIRPORTS_BY_CITY[(city || '').trim().toLowerCase()] || ALL_AIRPORTS
+  return AIRPORTS_BY_CITY[(city || '').trim().toLowerCase()] || []
 }
