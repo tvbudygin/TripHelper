@@ -1,4 +1,5 @@
 from datetime import date
+from zoneinfo import ZoneInfo, ZoneInfoNotFoundError
 
 from fastapi import APIRouter, Depends, HTTPException, status
 from fastapi.responses import Response
@@ -50,12 +51,16 @@ def create_trip(data: TripCreate, db: Session = Depends(get_db), current_user: U
 
 
 @router.get("/export.ics")
-def export_calendar(db: Session = Depends(get_db), current_user: User = Depends(get_current_user)):
+def export_calendar(time_zone: str = "Europe/Moscow", db: Session = Depends(get_db), current_user: User = Depends(get_current_user)):
     """Скачать все поездки как файл календаря .ics"""
 
+    try:
+        ZoneInfo(time_zone)
+    except (ZoneInfoNotFoundError, ValueError):
+        raise HTTPException(status_code=400, detail="Неизвестный часовой пояс") from None
     trips = db.query(Trip).filter(Trip.user_id == current_user.id).order_by(Trip.start_date).all()
     return Response(
-        content=build_ics(trips),
+        content=build_ics(trips, time_zone),
         media_type="text/calendar",
         headers={"Content-Disposition": 'attachment; filename="TripHelper.ics"'},
     )

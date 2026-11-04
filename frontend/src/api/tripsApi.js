@@ -23,7 +23,8 @@ export function updateTrip(tripId, tripData) {
 
 /** Скачивает все поездки файлом календаря для Google или Apple Calendar */
 export async function downloadCalendar() {
-  const blob = await apiClient.getBlob('/trips/export.ics')
+  const timeZone = Intl.DateTimeFormat().resolvedOptions().timeZone
+  const blob = await apiClient.getBlob(`/trips/export.ics?time_zone=${encodeURIComponent(timeZone)}`)
   const url = URL.createObjectURL(blob)
   const link = document.createElement('a')
   link.href = url

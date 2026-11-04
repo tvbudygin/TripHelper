@@ -1,6 +1,7 @@
 """Создание файла календаря (.ics) для поездки"""
 
-from datetime import date, datetime, timedelta
+from datetime import date, datetime, timedelta, timezone
+from zoneinfo import ZoneInfo
 
 from app.models.trip import Trip
 
@@ -125,11 +126,19 @@ def _trip_events(trip: Trip) -> list[str]:
     return lines
 
 
-def build_ics(trips: list[Trip]) -> str:
+def build_ics(trips: list[Trip], time_zone: str = "Europe/Moscow") -> str:
     """Собирает календарь из всех поездок"""
 
+    zone = ZoneInfo(time_zone)
     lines = ["BEGIN:VCALENDAR", "VERSION:2.0", "PRODID:-//TripHelper//RU", "CALSCALE:GREGORIAN"]
     for trip in trips:
         lines += _trip_events(trip)
+    # Записываем время в UTC, чтобы календарь не выбирал случайный часовой пояс
+    for index, line in enumerate(lines):
+        if line.startswith(("DTSTART:", "DTEND:")):
+            field, value = line.split(":", 1)
+            local_time = datetime.strptime(value, "%Y%m%dT%H%M%S").replace(tzinfo=zone)
+            utc_time = local_time.astimezone(timezone.utc)
+            lines[index] = f"{field}:{_format_datetime(utc_time)}Z"
     lines.append("END:VCALENDAR")
     return "\r\n".join(lines) + "\r\n"
